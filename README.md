@@ -54,6 +54,10 @@ console.log(IA.results);
 npm install billy-agent
 
 # 2. Set API key (Groq is free → https://console.groq.com)
+#    Option A: Environment variable (recommended)
+export GROQ_API_KEY=gsk_your_key
+
+#    Option B: CLI (saves to ~/.billy-agent/config.json)
 npx billy-agent config set gsk_your_key
 
 # 3. Use it

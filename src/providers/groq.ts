@@ -1,29 +1,7 @@
-import { existsSync, readFileSync } from "node:fs";
-import { resolve } from "node:path";
 import Groq from "groq-sdk";
+import { resolveApiKey } from "../config.js";
 import type { BillyConfig, BillyResponse } from "../types.js";
 import type { ChatProvider } from "./types.js";
-
-function getApiKeyFromConfig(): string | undefined {
-  const configPaths = [
-    "./billy-agent.config.json",
-    "./.billyagentrc",
-    "./.billyagentrc.json",
-  ];
-
-  for (const configPath of configPaths) {
-    const fullPath = resolve(process.cwd(), configPath);
-    if (existsSync(fullPath)) {
-      try {
-        const config = JSON.parse(readFileSync(fullPath, "utf-8"));
-        if (config.apiKey) {
-          return config.apiKey;
-        }
-      } catch {}
-    }
-  }
-  return undefined;
-}
 
 type Message = { role: "system" | "user"; content: string };
 
@@ -42,8 +20,7 @@ export class GroqProvider implements ChatProvider {
     this.timeout = config.timeout || 30000;
     this.retries = config.retries || 3;
 
-    const apiKey =
-      config.apiKey || process.env.GROQ_API_KEY || getApiKeyFromConfig();
+    const apiKey = resolveApiKey(config.apiKey, "GROQ_API_KEY");
     if (!apiKey) {
       throw new Error(
         "GROQ_API_KEY required. Get one for free at https://console.groq.com/\n" +

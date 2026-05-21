@@ -12,17 +12,27 @@ Requires Node.js 18 or higher.
 
 billy-agent uses Groq's free API. Get your key at [console.groq.com](https://console.groq.com/).
 
-### Option 1: CLI (Recommended)
+### Option 1: Environment Variable (Recommended)
+
+```bash
+export GROQ_API_KEY=gsk_your_api_key_here
+```
+
+For local development, create a `.env` file in your project root:
+
+```bash
+GROQ_API_KEY=gsk_your_api_key_here
+```
+
+> The `.env` file is **automatically detected** — no extra packages needed.
+
+### Option 2: CLI (Quick Setup)
 
 ```bash
 npx billy-agent config set gsk_your_api_key_here
 ```
 
-### Option 2: Environment Variable
-
-```bash
-export GROQ_API_KEY=gsk_your_api_key_here
-```
+Saves to `~/.billy-agent/config.json`. Use `npx billy-agent config show` to verify.
 
 ### Option 3: In Code
 
@@ -32,17 +42,7 @@ import billy from "billy-agent";
 const IA = billy({ apiKey: "gsk_your_api_key_here" });
 ```
 
-### Option 4: Config File
-
-Create `billy-agent.config.json` in your project root:
-
-```json
-{
-  "apiKey": "gsk_your_api_key_here"
-}
-```
-
-**Priority order:** code > env var > config file
+**Priority order:** code > env var > .env file > config file
 
 ## Quick Start
 

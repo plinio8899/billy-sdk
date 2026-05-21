@@ -1,4 +1,5 @@
 import { createRequire } from "node:module";
+import { resolveApiKey } from "../config.js";
 import type { BillyConfig, BillyResponse } from "../types.js";
 import type { ChatProvider } from "./types.js";
 
@@ -20,7 +21,7 @@ export class AnthropicProvider implements ChatProvider {
     this.timeout = config.timeout || 30000;
     this.retries = config.retries || 3;
 
-    const apiKey = config.apiKey || process.env.ANTHROPIC_API_KEY;
+    const apiKey = resolveApiKey(config.apiKey, "ANTHROPIC_API_KEY");
     if (!apiKey) {
       throw new Error(
         "ANTHROPIC_API_KEY required.\n" +

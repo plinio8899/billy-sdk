@@ -1,7 +1,17 @@
 #!/usr/bin/env node
 
-import { existsSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import {
+  getConfigPath,
+  hasConfig,
+  readApiKey,
+  removeApiKey,
+  saveApiKey,
+} from "./config.js";
+
+export function maskKey(key: string): string {
+  if (key.length <= 8) return key.slice(0, 4) + "****";
+  return key.slice(0, 4) + "****" + key.slice(-4);
+}
 
 const args = process.argv.slice(2);
 const command = args[0];
@@ -17,39 +27,29 @@ if (command === "config") {
       process.exit(1);
     }
 
-    const configPath = join(process.cwd(), "billy-agent.config.json");
-    writeFileSync(configPath, JSON.stringify({ apiKey }, null, 2));
-    console.log("✅ API key saved to billy-agent.config.json");
+    saveApiKey(apiKey);
+    console.log(`✅ API key saved to ${getConfigPath()}`);
+    console.log("⚠️  Stored in plain text. Use env vars for production.");
     console.log("   You can now use billy-agent without setting GROQ_API_KEY");
   } else if (subCommand === "show") {
-    const configPath = join(process.cwd(), "billy-agent.config.json");
-    if (existsSync(configPath)) {
-      const config = JSON.parse(readFileSync(configPath, "utf-8"));
-      if (config.apiKey) {
-        console.log(`API Key: ${config.apiKey.substring(0, 10)}...`);
-      }
+    const key = readApiKey();
+    if (key) {
+      console.log(`API Key: ${maskKey(key)}`);
     } else {
-      console.log("No config found. Run: billy-agent config set <api-key>");
+      console.log("No API key found.");
+      console.log("Run: billy-agent config set <api-key>");
     }
   } else if (subCommand === "remove") {
-    const configPath = join(process.cwd(), "billy-agent.config.json");
-    if (existsSync(configPath)) {
-      const config = JSON.parse(readFileSync(configPath, "utf-8"));
-      delete config.apiKey;
-      if (Object.keys(config).length === 0) {
-        unlinkSync(configPath);
-        console.log("✅ Config file removed");
-      } else {
-        writeFileSync(configPath, JSON.stringify(config, null, 2));
-        console.log("✅ API key removed from config");
-      }
+    if (hasConfig()) {
+      removeApiKey();
+      console.log(`✅ API key removed from ${getConfigPath()}`);
     } else {
-      console.log("No config found");
+      console.log("No API key found.");
     }
   } else {
     console.log("Commands:");
-    console.log("  billy-agent config set <api-key>  - Set your API key");
-    console.log("  billy-agent config show           - Show current API key");
+    console.log("  billy-agent config set <api-key>  - Save API key");
+    console.log("  billy-agent config show           - Show masked key");
     console.log(
       "  billy-agent config remove         - Remove API key from config",
     );

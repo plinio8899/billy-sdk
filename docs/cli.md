@@ -10,7 +10,10 @@ billy-agent includes a CLI command for managing your API key.
 npx billy-agent config set gsk_your_api_key_here
 ```
 
-Creates a `billy-agent.config.json` file in your project directory.
+Saves your API key to `~/.billy-agent/config.json`.
+
+> **⚠️ Security note:** The key is stored in **plain text** in your home directory.
+> For production and CI/CD, use environment variables instead.
 
 ### Show Current Key
 
@@ -18,7 +21,7 @@ Creates a `billy-agent.config.json` file in your project directory.
 npx billy-agent config show
 ```
 
-Displays the first 10 characters of your stored API key.
+Displays a masked version showing only the first and last 4 characters.
 
 ### Remove API Key
 
@@ -26,7 +29,7 @@ Displays the first 10 characters of your stored API key.
 npx billy-agent config remove
 ```
 
-Removes the key from `billy-agent.config.json`. If the file becomes empty, it is deleted.
+Removes the key from `~/.billy-agent/config.json`.
 
 ### Help
 
