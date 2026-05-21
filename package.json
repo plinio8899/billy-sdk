@@ -11,7 +11,7 @@
     "LICENSE"
   ],
   "bin": {
-    "billy-agent": "./dist/cli.js"
+    "billy-agent": "dist/cli.js"
   },
   "scripts": {
     "build": "tsc",
