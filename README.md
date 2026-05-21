@@ -1,5 +1,11 @@
 # billy-agent
 
+![npm version](https://img.shields.io/npm/v/billy-agent)
+![npm downloads](https://img.shields.io/npm/dw/billy-agent)
+![License](https://img.shields.io/npm/l/billy-agent)
+![Node](https://img.shields.io/node/v/billy-agent)
+[![CI](https://github.com/plinio8899/billy-agent/actions/workflows/ci.yml/badge.svg)](https://github.com/plinio8899/billy-agent/actions/workflows/ci.yml)
+
 Simple AI for your projects - generate, modify, validate, analyze, extract, and execute with natural language prompts.
 
 ## Installation
