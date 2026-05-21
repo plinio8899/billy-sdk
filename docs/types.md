@@ -33,6 +33,25 @@ await IA.create("dame un objeto con nombre y edad"); // returns object
 | `object` | Parses to object | `{ name: "Juan" }` |
 | `json` | Parses any valid JSON | Object or array |
 
+## Schema Validation
+
+Define exact structures with `.schema()` — the response is validated and automatically retried on failure.
+
+```javascript
+const user = await IA
+  .schema({
+    name: "string",
+    age: "number",
+    tags: ["string"],
+  })
+  .create("Dame un usuario");
+
+console.log(user);
+// → { name: "Ana", age: 28, tags: ["admin", "user"] }
+```
+
+See [Methods → .schema()](/methods#schema-def) for full reference.
+
 ## Automatic Detection
 
 Without specifying a type, the parser automatically detects:

@@ -23,6 +23,12 @@ Each method returns the same instance, so you can chain indefinitely.
 | `.asObject()` | Return type to object |
 | `.asJson()` | Return type to JSON |
 
+### Schema Validation
+
+| Method | Sets |
+|--------|------|
+| `.schema(def)` | Expected response structure (validates + retries) |
+
 ### System Prompt
 
 | Method | Sets |

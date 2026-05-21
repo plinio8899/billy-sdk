@@ -1,11 +1,13 @@
 import { LlmClient } from "./client.js";
 import { parseAs, parseResponse } from "./parser.js";
+import { schemaToPrompt, validateSchema } from "./schema.js";
 import type {
   BillyConfig,
   BillyOptions,
   BillyResponse,
   ResponseLength,
   ReturnType,
+  SchemaDef,
   TaskFunction,
   Variables,
 } from "./types.js";
@@ -18,6 +20,7 @@ export class Billy {
   private _returnType: ReturnType | undefined = undefined;
   private _length: ResponseLength | undefined = undefined;
   private _systemPrompt: string | undefined = undefined;
+  private _schema: SchemaDef | undefined = undefined;
 
   constructor(config: BillyConfig = {}) {
     this.client = new LlmClient(config);
@@ -92,6 +95,8 @@ export class Billy {
   ): Promise<unknown> {
     const returnType = options?.as || this._returnType;
     const length = options?.length || this._length;
+    const schema = this._schema;
+
     const fullPrompt = this.buildPrompt(
       type,
       prompt,
@@ -115,10 +120,49 @@ export class Billy {
     this._error = undefined;
     this._raw = response.raw;
 
+    if (schema) {
+      return this.resolveWithSchema(response.content, schema, fullPrompt);
+    }
+
     const parsed = parseResponse(response.content);
     this._results = returnType ? parseAs(returnType, response.content) : parsed;
 
     return this._results;
+  }
+
+  private async resolveWithSchema(
+    content: string,
+    schema: SchemaDef,
+    originalPrompt: string,
+    attempt = 1,
+  ): Promise<unknown> {
+    const parsed = parseAs("json", content);
+    const errors = validateSchema(parsed, schema);
+
+    if (errors.length === 0) {
+      const result = typeof parsed === "string" ? { error: parsed } : parsed;
+      this._results = result;
+      return result;
+    }
+
+    if (attempt >= 2) {
+      throw new SchemaValidationError(
+        `Schema validation failed:\n${errors.join("\n")}`,
+        errors,
+        content,
+      );
+    }
+
+    const retryPrompt = `${originalPrompt}\n\nTu respuesta anterior no cumplió con la estructura requerida. Errores:\n${errors.join("\n")}\n\nCorrige y responde ÚNICAMENTE con JSON válido que cumpla exactamente la estructura indicada.`;
+
+    const response = await this.client.chat(retryPrompt, this._systemPrompt);
+
+    if (response.error) {
+      throw new Error(response.error);
+    }
+
+    this._raw = response.raw;
+    return this.resolveWithSchema(response.content, schema, originalPrompt, attempt + 1);
   }
 
   private buildPrompt(
@@ -171,12 +215,16 @@ export class Billy {
       long: "\n\nResponde de manera detallada y completa.",
     };
 
+    const schemaInstruction = this._schema
+      ? `\n\nResponde ÚNICAMENTE con un objeto JSON válido que cumpla EXACTAMENTE esta estructura:\n${schemaToPrompt(this._schema)}\n\nSin markdown, sin texto adicional, sin explicaciones.`
+      : "";
+
     const typeInstruction = returnType
       ? typeInstructions[returnType] || ""
       : "";
     const lengthInstruction = length ? lengthInstructions[length] : "";
 
-    return `${taskInstructions[type]}\n\n${processedPrompt}${typeInstruction}${lengthInstruction}`;
+    return `${taskInstructions[type]}\n\n${processedPrompt}${schemaInstruction}${typeInstruction}${lengthInstruction}`;
   }
 
   asString(): Billy {
@@ -229,6 +277,11 @@ export class Billy {
     return this;
   }
 
+  schema(def: SchemaDef): Billy {
+    this._schema = def;
+    return this;
+  }
+
   // biome-ignore lint/suspicious/noThenProperty: intentional thenable pattern
   then<TResult1 = unknown, TResult2 = never>(
     onfulfilled?:
@@ -257,5 +310,16 @@ export class Billy {
 
   get error(): string | undefined {
     return this._error;
+  }
+}
+
+export class SchemaValidationError extends Error {
+  constructor(
+    message: string,
+    readonly errors: string[],
+    readonly raw: string,
+  ) {
+    super(message);
+    this.name = "SchemaValidationError";
   }
 }

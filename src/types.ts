@@ -37,6 +37,13 @@ export type ReturnType =
 
 export type ResponseLength = "short" | "medium" | "long";
 
+export type SchemaPrimitive = "string" | "number" | "boolean";
+
+export type SchemaDef =
+  | SchemaPrimitive
+  | { [key: string]: SchemaDef }
+  | [SchemaDef];
+
 export interface BillyOptions {
   as?: ReturnType;
   length?: ResponseLength;

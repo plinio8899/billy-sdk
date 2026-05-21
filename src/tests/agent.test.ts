@@ -94,4 +94,11 @@ describe("Billy", () => {
       undefined,
     );
   });
+
+  it("schema() setea el schema internamente", () => {
+    const agent = new Billy();
+    const schemaDef = { name: "string", age: "number" } as const;
+    agent.schema(schemaDef);
+    assert.equal(Reflect.get(agent, "_schema"), schemaDef);
+  });
 });

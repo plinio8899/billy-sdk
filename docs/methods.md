@@ -63,6 +63,53 @@ const result = await IA.asNumber().execute("Cuánto es 15 * 7");
 console.log(result); // 105
 ```
 
+## .schema(def)
+
+Define a **structured schema** that the response must match. Chainable. Automatically validates and retries if the LLM response doesn't fit.
+
+```javascript
+const user = await IA
+  .schema({
+    name: "string",
+    age: "number",
+    active: "boolean",
+  })
+  .create("Dame un usuario ficticio");
+
+console.log(user);
+// → { name: "Ana", age: 28, active: true }
+```
+
+### Supported types in schemas
+
+| Schema type | JS type | Example |
+|-------------|---------|---------|
+| `"string"` | `string` | `"Juan"` |
+| `"number"` | `number` | `42` |
+| `"boolean"` | `boolean` | `true` |
+| `["string"]` | `string[]` | `["a", "b"]` |
+| `["number"]` | `number[]` | `[1, 2]` |
+| `{ ... }` | Nested object | `{ city: "string" }` |
+
+### Nested schemas
+
+```javascript
+const result = await IA
+  .schema({
+    title: "string",
+    tags: ["string"],
+    author: {
+      name: "string",
+      age: "number",
+    },
+  })
+  .create("Dame un post con autor");
+```
+
+### Automatic retry on validation failure
+
+If the LLM returns something that doesn't match the schema, billy-agent automatically retries with the validation errors as feedback.
+
 ## .system(prompt)
 
 Set a system prompt to define the AI's role, behavior, or constraints. Chainable.
