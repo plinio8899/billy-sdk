@@ -75,4 +75,23 @@ describe("Billy", () => {
     Reflect.set(agent, "_error", "error-test");
     await assert.rejects(() => agent.then());
   });
+
+  it("system() es encadenable y retorna la instancia", () => {
+    const agent = new Billy();
+    assert.equal(agent.system("eres un experto"), agent);
+  });
+
+  it("system() setea el system prompt vía método", () => {
+    const agent = new Billy();
+    agent.system("eres un historiador");
+    assert.equal(Reflect.get(agent, "_systemPrompt"), "eres un historiador");
+  });
+
+  it("acepta systemPrompt en la configuración inicial", () => {
+    const agent = new Billy({ systemPrompt: "eres un experto" });
+    assert.equal(
+      Reflect.get(agent, "_systemPrompt"),
+      undefined,
+    );
+  });
 });

@@ -23,6 +23,12 @@ Each method returns the same instance, so you can chain indefinitely.
 | `.asObject()` | Return type to object |
 | `.asJson()` | Return type to JSON |
 
+### System Prompt
+
+| Method | Sets |
+|--------|------|
+| `.system(prompt)` | System prompt (role/behavior) |
+
 ### Length Setters
 
 | Method | Sets |

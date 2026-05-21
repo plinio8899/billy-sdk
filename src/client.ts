@@ -17,6 +17,7 @@ const providerMap: Record<
 
 export class LlmClient {
   private provider: ChatProvider;
+  private systemPrompt: string;
 
   constructor(config: BillyConfig = {}) {
     const providerType: ProviderType = config.provider || "groq";
@@ -27,9 +28,11 @@ export class LlmClient {
       );
     }
     this.provider = new Provider(config);
+    this.systemPrompt = config.systemPrompt || "";
   }
 
-  async chat(prompt: string): Promise<BillyResponse> {
-    return this.provider.chat(prompt);
+  async chat(prompt: string, systemPrompt?: string): Promise<BillyResponse> {
+    const sp = systemPrompt ?? this.systemPrompt;
+    return this.provider.chat(prompt, sp || undefined);
   }
 }

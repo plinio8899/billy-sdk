@@ -27,6 +27,7 @@ const IA = billy({
 | `timeout` | `number` | `30000` | Request timeout in ms |
 | `retries` | `number` | `3` | Number of retry attempts on failure |
 | `apiKey` | `string` | — | API key (overrides env var and config file) |
+| `systemPrompt` | `string` | — | System prompt to define AI's role or behavior |
 
 ## Provider Defaults
 

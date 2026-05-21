@@ -8,6 +8,7 @@ export interface BillyConfig {
   apiKey?: string;
   timeout?: number;
   retries?: number;
+  systemPrompt?: string;
 }
 
 export interface BillyResponse {

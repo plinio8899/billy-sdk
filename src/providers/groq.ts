@@ -25,6 +25,8 @@ function getApiKeyFromConfig(): string | undefined {
   return undefined;
 }
 
+type Message = { role: "system" | "user"; content: string };
+
 export class GroqProvider implements ChatProvider {
   private client: Groq;
   private model: string;
@@ -56,8 +58,17 @@ export class GroqProvider implements ChatProvider {
     this.client = new Groq({ apiKey });
   }
 
-  async chat(prompt: string): Promise<BillyResponse> {
+  async chat(
+    prompt: string,
+    systemPrompt?: string,
+  ): Promise<BillyResponse> {
     let lastError: Error | undefined;
+
+    const messages: Message[] = [];
+    if (systemPrompt) {
+      messages.push({ role: "system", content: systemPrompt });
+    }
+    messages.push({ role: "user", content: prompt });
 
     for (let attempt = 1; attempt <= this.retries; attempt++) {
       try {
@@ -67,7 +78,7 @@ export class GroqProvider implements ChatProvider {
         const response = await this.client.chat.completions.create(
           {
             model: this.model,
-            messages: [{ role: "user", content: prompt }],
+            messages,
             temperature: this.temperature,
             max_tokens: this.maxTokens,
           },

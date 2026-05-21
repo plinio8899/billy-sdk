@@ -44,7 +44,10 @@ export class AnthropicProvider implements ChatProvider {
     }
   }
 
-  async chat(prompt: string): Promise<BillyResponse> {
+  async chat(
+    prompt: string,
+    systemPrompt?: string,
+  ): Promise<BillyResponse> {
     let lastError: Error | undefined;
 
     for (let attempt = 1; attempt <= this.retries; attempt++) {
@@ -56,6 +59,7 @@ export class AnthropicProvider implements ChatProvider {
           {
             model: this.model,
             max_tokens: this.maxTokens,
+            system: systemPrompt || undefined,
             messages: [{ role: "user", content: prompt }],
             temperature: this.temperature,
           },

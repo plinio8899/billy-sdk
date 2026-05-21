@@ -17,6 +17,7 @@ export class Billy {
   private _error: string | undefined = undefined;
   private _returnType: ReturnType | undefined = undefined;
   private _length: ResponseLength | undefined = undefined;
+  private _systemPrompt: string | undefined = undefined;
 
   constructor(config: BillyConfig = {}) {
     this.client = new LlmClient(config);
@@ -99,7 +100,10 @@ export class Billy {
       length,
     );
 
-    const response: BillyResponse = await this.client.chat(fullPrompt);
+    const response: BillyResponse = await this.client.chat(
+      fullPrompt,
+      this._systemPrompt,
+    );
 
     if (response.error) {
       this._error = response.error;
@@ -217,6 +221,11 @@ export class Billy {
 
   long(): Billy {
     this._length = "long";
+    return this;
+  }
+
+  system(prompt: string): Billy {
+    this._systemPrompt = prompt;
     return this;
   }
 

@@ -4,6 +4,8 @@ import type { ChatProvider } from "./types.js";
 
 const require = createRequire(import.meta.url);
 
+type Message = { role: "system" | "user"; content: string };
+
 export class OpenAIProvider implements ChatProvider {
   // biome-ignore lint/suspicious/noExplicitAny: optional SDK dependency
   private client: any;
@@ -43,8 +45,17 @@ export class OpenAIProvider implements ChatProvider {
     }
   }
 
-  async chat(prompt: string): Promise<BillyResponse> {
+  async chat(
+    prompt: string,
+    systemPrompt?: string,
+  ): Promise<BillyResponse> {
     let lastError: Error | undefined;
+
+    const messages: Message[] = [];
+    if (systemPrompt) {
+      messages.push({ role: "system", content: systemPrompt });
+    }
+    messages.push({ role: "user", content: prompt });
 
     for (let attempt = 1; attempt <= this.retries; attempt++) {
       try {
@@ -54,7 +65,7 @@ export class OpenAIProvider implements ChatProvider {
         const response = await this.client.chat.completions.create(
           {
             model: this.model,
-            messages: [{ role: "user", content: prompt }],
+            messages,
             temperature: this.temperature,
             max_tokens: this.maxTokens,
           },

@@ -63,6 +63,31 @@ const result = await IA.asNumber().execute("Cuánto es 15 * 7");
 console.log(result); // 105
 ```
 
+## .system(prompt)
+
+Set a system prompt to define the AI's role, behavior, or constraints. Chainable.
+
+```javascript
+IA.system("Eres un experto en historia medieval");
+
+const respuesta = await IA.create("Háblame sobre el feudalismo");
+```
+
+The system prompt can be combined with any method and type:
+
+```javascript
+const criticas = await IA
+  .system("Eres un crítico de cine sarcástico")
+  .asArray()
+  .create("Dame 3 reseñas de películas de terror");
+```
+
+You can also set it in the initial configuration:
+
+```javascript
+const IA = billy({ systemPrompt: "Eres un asistente amigable" });
+```
+
 ## Properties
 
 After any method call, these properties are available:
