@@ -44,6 +44,17 @@ describe('Billy', () => {
     assert.equal(agent.long(), agent);
   });
 
+  it('se inicializa con provider explícito', () => {
+    const agent = new Billy({ provider: 'groq', apiKey: 'test' });
+    assert.ok(agent instanceof Billy);
+  });
+
+  it('lanza error con provider desconocido', () => {
+    assert.throws(() => {
+      new Billy({ provider: 'unknown' as any, apiKey: 'test' });
+    }, /Unknown provider/);
+  });
+
   it('getters devuelven undefined inicialmente', () => {
     const agent = new Billy();
     assert.equal(agent.results, undefined);

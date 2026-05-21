@@ -1,4 +1,7 @@
+export type ProviderType = 'groq' | 'openai' | 'anthropic';
+
 export interface BillyConfig {
+  provider?: ProviderType;
   model?: string;
   temperature?: number;
   maxTokens?: number;

@@ -1,9 +1,9 @@
-import { GroqClient } from './client.js';
+import { LlmClient } from './client.js';
 import { parseResponse, parseAs } from './parser.js';
 import type { BillyConfig, BillyResponse, Variables, TaskFunction, BillyOptions, ReturnType, ResponseLength } from './types.js';
 
 export class Billy {
-  private client: GroqClient;
+  private client: LlmClient;
   private _results: unknown = undefined;
   private _raw: string = '';
   private _error: string | undefined = undefined;
@@ -11,7 +11,7 @@ export class Billy {
   private _length: ResponseLength | undefined = undefined;
 
   constructor(config: BillyConfig = {}) {
-    this.client = new GroqClient(config);
+    this.client = new LlmClient(config);
   }
 
   async create(prompt: string, varsOrOptions?: Variables | BillyOptions): Promise<unknown> {

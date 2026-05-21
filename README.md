@@ -82,10 +82,31 @@ await IA.create("dame un objeto con nombre y edad");
 | `object` | Parses to object |
 | `json` | Parses any valid JSON |
 
+## Providers
+
+billy-agent supports multiple AI providers. Groq is the default (no extra dependencies).
+
+```javascript
+// Groq (default, no extra install)
+const IA = billy({ provider: 'groq', apiKey: 'gsk_...' });
+
+// OpenAI (requires: npm install openai)
+const IA = billy({ provider: 'openai', apiKey: 'sk-...' });
+
+// Anthropic (requires: npm install @anthropic-ai/sdk)
+const IA = billy({ provider: 'anthropic', apiKey: 'sk-ant-...' });
+```
+
+Each provider reads its own environment variable as fallback:
+- `GROQ_API_KEY`
+- `OPENAI_API_KEY`
+- `ANTHROPIC_API_KEY`
+
 ## Configuration (Optional)
 
 ```javascript
 const IA = billy({
+  provider: 'groq',
   model: 'llama-3.3-70b-versatile',
   temperature: 0.7,
   maxTokens: 1000,
@@ -96,11 +117,17 @@ const IA = billy({
 
 ### Available Models
 
-| Model | Best For |
-|-------|----------|
-| `llama-3.3-70b-versatile` | General purpose (default) |
-| `llama-3.1-8b-instant` | Fast & cheap tasks |
-| `mixtral-8x7b-32768` | Multilingual |
+| Provider | Model | Best For |
+|----------|-------|----------|
+| Groq | `llama-3.3-70b-versatile` | General purpose (default) |
+| Groq | `llama-3.1-8b-instant` | Fast & cheap tasks |
+| Groq | `mixtral-8x7b-32768` | Multilingual |
+| OpenAI | `gpt-4o-mini` | General purpose (default) |
+| OpenAI | `gpt-4o` | Complex tasks |
+| OpenAI | `gpt-4-turbo` | High quality |
+| Anthropic | `claude-3-haiku-20240307` | Fast (default) |
+| Anthropic | `claude-3-sonnet-20240229` | Balanced |
+| Anthropic | `claude-3-opus-20240229` | Complex |
 
 ## API Key
 
