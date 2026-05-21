@@ -1,11 +1,11 @@
-import { describe, it, before, after } from 'node:test';
-import assert from 'node:assert/strict';
-import { Billy } from '../agent.js';
+import assert from "node:assert/strict";
+import { after, before, describe, it } from "node:test";
+import { Billy } from "../agent.js";
 
 const ORIGINAL_KEY = process.env.GROQ_API_KEY;
 
 before(() => {
-  process.env.GROQ_API_KEY = 'test-key-123';
+  process.env.GROQ_API_KEY = "test-key-123";
 });
 
 after(() => {
@@ -16,18 +16,18 @@ after(() => {
   }
 });
 
-describe('Billy', () => {
-  it('se inicializa sin config', () => {
+describe("Billy", () => {
+  it("se inicializa sin config", () => {
     const agent = new Billy();
     assert.ok(agent instanceof Billy);
   });
 
-  it('se inicializa con configuración', () => {
-    const agent = new Billy({ model: 'mixtral-8x7b-32768', temperature: 0.5 });
+  it("se inicializa con configuración", () => {
+    const agent = new Billy({ model: "mixtral-8x7b-32768", temperature: 0.5 });
     assert.ok(agent instanceof Billy);
   });
 
-  it('métodos encadenables asType retornan la instancia', () => {
+  it("métodos encadenables asType retornan la instancia", () => {
     const agent = new Billy();
     assert.equal(agent.asNumber(), agent);
     assert.equal(agent.asString(), agent);
@@ -37,41 +37,42 @@ describe('Billy', () => {
     assert.equal(agent.asJson(), agent);
   });
 
-  it('métodos encadenables de length retornan la instancia', () => {
+  it("métodos encadenables de length retornan la instancia", () => {
     const agent = new Billy();
     assert.equal(agent.short(), agent);
     assert.equal(agent.medium(), agent);
     assert.equal(agent.long(), agent);
   });
 
-  it('se inicializa con provider explícito', () => {
-    const agent = new Billy({ provider: 'groq', apiKey: 'test' });
+  it("se inicializa con provider explícito", () => {
+    const agent = new Billy({ provider: "groq", apiKey: "test" });
     assert.ok(agent instanceof Billy);
   });
 
-  it('lanza error con provider desconocido', () => {
+  it("lanza error con provider desconocido", () => {
     assert.throws(() => {
-      new Billy({ provider: 'unknown' as any, apiKey: 'test' });
+      // biome-ignore lint/suspicious/noExplicitAny: testing invalid provider
+      new Billy({ provider: "unknown" as any, apiKey: "test" });
     }, /Unknown provider/);
   });
 
-  it('getters devuelven undefined inicialmente', () => {
+  it("getters devuelven undefined inicialmente", () => {
     const agent = new Billy();
     assert.equal(agent.results, undefined);
-    assert.equal(agent.raw, '');
+    assert.equal(agent.raw, "");
     assert.equal(agent.error, undefined);
   });
 
-  it('then() resuelve con results si existe', async () => {
+  it("then() resuelve con results si existe", async () => {
     const agent = new Billy();
-    Reflect.set(agent, '_results', 'valor-test');
+    Reflect.set(agent, "_results", "valor-test");
     const result = await agent.then();
-    assert.equal(result, 'valor-test');
+    assert.equal(result, "valor-test");
   });
 
-  it('then() rechaza si hay error', async () => {
+  it("then() rechaza si hay error", async () => {
     const agent = new Billy();
-    Reflect.set(agent, '_error', 'error-test');
+    Reflect.set(agent, "_error", "error-test");
     await assert.rejects(() => agent.then());
   });
 });

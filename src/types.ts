@@ -1,4 +1,4 @@
-export type ProviderType = 'groq' | 'openai' | 'anthropic';
+export type ProviderType = "groq" | "openai" | "anthropic";
 
 export interface BillyConfig {
   provider?: ProviderType;
@@ -18,11 +18,23 @@ export interface BillyResponse {
 
 export type Variables = Record<string, unknown>;
 
-export type TaskFunction = 'create' | 'modify' | 'validate' | 'analyze' | 'extract' | 'execute';
+export type TaskFunction =
+  | "create"
+  | "modify"
+  | "validate"
+  | "analyze"
+  | "extract"
+  | "execute";
 
-export type ReturnType = 'string' | 'number' | 'boolean' | 'array' | 'object' | 'json';
+export type ReturnType =
+  | "string"
+  | "number"
+  | "boolean"
+  | "array"
+  | "object"
+  | "json";
 
-export type ResponseLength = 'short' | 'medium' | 'long';
+export type ResponseLength = "short" | "medium" | "long";
 
 export interface BillyOptions {
   as?: ReturnType;

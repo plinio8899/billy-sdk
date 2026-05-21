@@ -1,4 +1,4 @@
-import type { ReturnType } from './types.js';
+import type { ReturnType } from "./types.js";
 
 function cleanContent(content: string): string {
   let cleaned = content;
@@ -17,14 +17,14 @@ function cleanContent(content: string): string {
     /^-{3,}\s*/,
     /^```\w*\s*/,
     /^```\s*$/,
-    /^\d+\.\s+/
+    /^\d+\.\s+/,
   ];
 
   for (const prefix of commonPrefixes) {
-    cleaned = cleaned.replace(prefix, '');
+    cleaned = cleaned.replace(prefix, "");
   }
 
-  cleaned = cleaned.replace(/```/g, '');
+  cleaned = cleaned.replace(/```/g, "");
 
   return cleaned.trim();
 }
@@ -50,11 +50,11 @@ export function parseResponse(content: string): unknown {
 
   if (isNumeric(trimmed)) {
     const num = Number(trimmed);
-    if (!isNaN(num)) return num;
+    if (!Number.isNaN(num)) return num;
   }
 
-  if (trimmed.toLowerCase() === 'true') return true;
-  if (trimmed.toLowerCase() === 'false') return false;
+  if (trimmed.toLowerCase() === "true") return true;
+  if (trimmed.toLowerCase() === "false") return false;
 
   return content;
 }
@@ -63,19 +63,27 @@ export function parseAs(type: ReturnType, content: string): unknown {
   const trimmed = cleanContent(content).trim();
 
   switch (type) {
-    case 'number':
+    case "number": {
       const numMatch = trimmed.match(/-?\d+(\.\d+)?/);
       if (numMatch) {
         return parseFloat(numMatch[0]);
       }
-      const num = Number(trimmed.replace(/[^0-9.-]/g, ''));
-      return isNaN(num) ? 0 : num;
+      const num = Number(trimmed.replace(/[^0-9.-]/g, ""));
+      return Number.isNaN(num) ? 0 : num;
+    }
 
-    case 'boolean':
+    case "boolean": {
       const lower = trimmed.toLowerCase();
-      return lower === 'true' || lower === 'yes' || lower === '1' || lower === 'si' || lower === 'sí';
+      return (
+        lower === "true" ||
+        lower === "yes" ||
+        lower === "1" ||
+        lower === "si" ||
+        lower === "sí"
+      );
+    }
 
-    case 'array':
+    case "array": {
       try {
         const jsonMatch = trimmed.match(/\[[\s\S]*\]/);
         if (jsonMatch) {
@@ -83,10 +91,14 @@ export function parseAs(type: ReturnType, content: string): unknown {
           if (Array.isArray(arr)) return arr;
         }
       } catch {}
-      const lines = trimmed.split(/[\n,]/).map(s => s.replace(/^[-•*]\s*/, '').trim()).filter(s => s && !s.startsWith('```'));
+      const lines = trimmed
+        .split(/[\n,]/)
+        .map((s) => s.replace(/^[-•*]\s*/, "").trim())
+        .filter((s) => s && !s.startsWith("```"));
       return lines;
+    }
 
-    case 'object':
+    case "object":
       try {
         const jsonMatch = trimmed.match(/\{[\s\S]*\}/);
         if (jsonMatch) {
@@ -97,7 +109,7 @@ export function parseAs(type: ReturnType, content: string): unknown {
         return content;
       }
 
-    case 'json':
+    case "json":
       try {
         const jsonMatch = trimmed.match(/(\{[\s\S]*\}|\[[\s\S]*\])/);
         if (jsonMatch) {
@@ -107,21 +119,19 @@ export function parseAs(type: ReturnType, content: string): unknown {
       } catch {
         return content;
       }
-
-    case 'string':
     default:
       return content;
   }
 }
 
 function isJsonObject(str: string): boolean {
-  return str.startsWith('{') && str.endsWith('}');
+  return str.startsWith("{") && str.endsWith("}");
 }
 
 function isJsonArray(str: string): boolean {
-  return str.startsWith('[') && str.endsWith(']');
+  return str.startsWith("[") && str.endsWith("]");
 }
 
 function isNumeric(str: string): boolean {
-  return !isNaN(Number(str)) && /^-?\d+(\.\d+)?$/.test(str);
+  return !Number.isNaN(Number(str)) && /^-?\d+(\.\d+)?$/.test(str);
 }

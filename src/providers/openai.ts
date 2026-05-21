@@ -1,10 +1,11 @@
-import { createRequire } from 'module';
-import type { BillyConfig, BillyResponse } from '../types.js';
-import type { ChatProvider } from './types.js';
+import { createRequire } from "node:module";
+import type { BillyConfig, BillyResponse } from "../types.js";
+import type { ChatProvider } from "./types.js";
 
 const require = createRequire(import.meta.url);
 
 export class OpenAIProvider implements ChatProvider {
+  // biome-ignore lint/suspicious/noExplicitAny: optional SDK dependency
   private client: any;
   private model: string;
   private temperature: number;
@@ -13,7 +14,7 @@ export class OpenAIProvider implements ChatProvider {
   private retries: number;
 
   constructor(config: BillyConfig = {}) {
-    this.model = config.model || 'gpt-4o-mini';
+    this.model = config.model || "gpt-4o-mini";
     this.temperature = config.temperature ?? 0.7;
     this.maxTokens = config.maxTokens || 1000;
     this.timeout = config.timeout || 30000;
@@ -22,22 +23,22 @@ export class OpenAIProvider implements ChatProvider {
     const apiKey = config.apiKey || process.env.OPENAI_API_KEY;
     if (!apiKey) {
       throw new Error(
-        'OPENAI_API_KEY required.\n' +
-        'Set OPENAI_API_KEY environment variable or pass apiKey in config.'
+        "OPENAI_API_KEY required.\n" +
+          "Set OPENAI_API_KEY environment variable or pass apiKey in config.",
       );
     }
 
     this.client = this.loadClient(apiKey);
   }
 
+  // biome-ignore lint/suspicious/noExplicitAny: optional SDK dependency
   private loadClient(apiKey: string): any {
     try {
-      const OpenAI = require('openai');
+      const OpenAI = require("openai");
       return new OpenAI({ apiKey, timeout: this.timeout });
     } catch {
       throw new Error(
-        'openai package not found. Install it:\n' +
-        '  npm install openai'
+        "openai package not found. Install it:\n" + "  npm install openai",
       );
     }
   }
@@ -50,25 +51,29 @@ export class OpenAIProvider implements ChatProvider {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), this.timeout);
 
-        const response = await this.client.chat.completions.create({
-          model: this.model,
-          messages: [{ role: 'user', content: prompt }],
-          temperature: this.temperature,
-          max_tokens: this.maxTokens,
-        }, {
-          signal: controller.signal as any
-        });
+        const response = await this.client.chat.completions.create(
+          {
+            model: this.model,
+            messages: [{ role: "user", content: prompt }],
+            temperature: this.temperature,
+            max_tokens: this.maxTokens,
+          },
+          {
+            // biome-ignore lint/suspicious/noExplicitAny: AbortSignal type mismatch
+            signal: controller.signal as any,
+          },
+        );
 
         clearTimeout(timeoutId);
 
-        const content = response.choices[0]?.message?.content || '';
+        const content = response.choices[0]?.message?.content || "";
 
         return {
           content: content.trim(),
-          raw: content.trim()
+          raw: content.trim(),
         };
-      } catch (error: any) {
-        lastError = error;
+      } catch (error: unknown) {
+        lastError = error as Error;
 
         if (attempt < this.retries) {
           await this.delay(1000 * attempt);
@@ -77,13 +82,13 @@ export class OpenAIProvider implements ChatProvider {
     }
 
     return {
-      content: '',
-      raw: '',
-      error: lastError?.message || 'Unknown error'
+      content: "",
+      raw: "",
+      error: lastError?.message || "Unknown error",
     };
   }
 
   private delay(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 }
