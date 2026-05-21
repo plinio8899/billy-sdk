@@ -5,6 +5,7 @@
 ![License](https://img.shields.io/npm/l/billy-agent)
 ![Node](https://img.shields.io/node/v/billy-agent)
 [![CI](https://github.com/plinio8899/billy-agent/actions/workflows/ci.yml/badge.svg)](https://github.com/plinio8899/billy-agent/actions/workflows/ci.yml)
+[![Docs](https://img.shields.io/badge/docs-vitepress-blue)](https://plinio8899.github.io/billy-agent/)
 
 Simple AI for your projects - generate, modify, validate, analyze, extract, and execute with natural language prompts.
 
