@@ -1,0 +1,56 @@
+{
+  "name": "billy-agent",
+  "version": "1.0.3",
+  "description": "Simple AI for your projects - generate, modify, validate, analyze, extract, and execute with natural language prompts",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "type": "module",
+  "files": [
+    "dist/",
+    "README.md",
+    "LICENSE"
+  ],
+  "bin": {
+    "billy-agent": "./dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "prepublishOnly": "npm run build",
+    "test": "node --test"
+  },
+  "keywords": [
+    "ai",
+    "llm",
+    "openai",
+    "groq",
+    "agent",
+    "generative",
+    "codegen"
+  ],
+  "author": {
+    "name": "plinio8899",
+    "url": ""
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": ""
+  },
+  "bugs": {
+    "url": ""
+  },
+  "homepage": "",
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "groq-sdk": "^0.8.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
