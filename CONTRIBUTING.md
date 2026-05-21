@@ -16,7 +16,7 @@ Abre un issue describiendo la mejora, el caso de uso y un ejemplo de cómo funci
 
 ## Pull Requests
 
-1. Haz fork del repo y crea una rama desde `master`
+1. Haz fork del repo y crea una rama desde `main`
 2. Sigue el estilo de código existente (TypeScript, sin comentarios)
 3. Asegura que `npm run build` y `npm test` pasen
 4. Actualiza el README si es necesario
