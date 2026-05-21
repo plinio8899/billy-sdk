@@ -21,7 +21,7 @@
     "lint:fix": "biome check --apply src/",
     "format": "biome format --write src/",
     "docs:dev": "vitepress dev docs",
-    "docs:build": "vitepress build docs",
+    "docs:build": "node scripts/generate-og.mjs && vitepress build docs",
     "docs:preview": "vitepress preview docs"
   },
   "keywords": [
@@ -55,6 +55,7 @@
   "devDependencies": {
     "@biomejs/biome": "^2.4.15",
     "@types/node": "^20.0.0",
+    "sharp": "^0.34.5",
     "typescript": "^5.0.0",
     "vitepress": "^1.6.4"
   },

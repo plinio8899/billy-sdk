@@ -5,6 +5,37 @@ export default defineConfig({
   description:
     "Simple AI for your projects - generate, modify, validate, analyze, extract, and execute with natural language prompts",
   base: "/billy-agent/",
+  head: [
+    ["meta", { property: "og:title", content: "billy-agent" }],
+    [
+      "meta",
+      {
+        property: "og:description",
+        content:
+          "Simple AI for your projects — generate, modify, validate, analyze, extract, and execute with natural language prompts",
+      },
+    ],
+    [
+      "meta",
+      { property: "og:image", content: "/billy-agent/og-image.png" },
+    ],
+    ["meta", { property: "og:url", content: "https://plinio8899.github.io/billy-agent/" }],
+    ["meta", { property: "og:type", content: "website" }],
+    ["meta", { name: "twitter:card", content: "summary_large_image" }],
+    ["meta", { name: "twitter:title", content: "billy-agent" }],
+    [
+      "meta",
+      {
+        name: "twitter:description",
+        content:
+          "Simple AI for your projects — generate, modify, validate, analyze, extract, and execute with natural language prompts",
+      },
+    ],
+    [
+      "meta",
+      { name: "twitter:image", content: "/billy-agent/og-image.png" },
+    ],
+  ],
   themeConfig: {
     nav: [
       { text: "Home", link: "/" },

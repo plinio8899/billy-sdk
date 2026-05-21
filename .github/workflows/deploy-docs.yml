@@ -5,6 +5,8 @@ on:
     branches: [main]
     paths:
       - "docs/**"
+      - "scripts/**"
+      - "package.json"
       - ".github/workflows/deploy-docs.yml"
 
 permissions:
