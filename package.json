@@ -28,18 +28,18 @@
     "codegen"
   ],
   "author": {
-    "name": "plinio8899",
-    "url": ""
+    "name": "Plinio",
+    "url": "https://github.com/plinio8899"
   },
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": ""
+    "url": "git+https://github.com/plinio8899/billy-agent.git"
   },
   "bugs": {
-    "url": ""
+    "url": "https://github.com/plinio8899/billy-agent/issues"
   },
-  "homepage": "",
+  "homepage": "https://github.com/plinio8899/billy-agent#readme",
   "publishConfig": {
     "access": "public"
   },
