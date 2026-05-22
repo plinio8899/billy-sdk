@@ -5,8 +5,10 @@ import type {
   BillyConfig,
   BillyOptions,
   BillyResponse,
+  InferReturn,
   ResponseLength,
   ReturnType,
+  ReturnTypeMap,
   SchemaDef,
   TaskFunction,
   Variables,
@@ -14,7 +16,7 @@ import type {
 
 type BillyStream = AsyncIterable<string>;
 
-export class Billy {
+export class Billy<T = unknown> {
   private client: LlmClient;
   private _results: unknown = undefined;
   private _raw: string = "";
@@ -31,49 +33,49 @@ export class Billy {
   async create(
     prompt: string,
     varsOrOptions?: Variables | BillyOptions,
-  ): Promise<unknown> {
+  ): Promise<InferReturn<T>> {
     const { vars, options } = this.parseArgs(varsOrOptions);
-    return this.run("create", prompt, vars, options);
+    return this.run("create", prompt, vars, options) as Promise<InferReturn<T>>;
   }
 
   async modify(
     prompt: string,
     varsOrOptions?: Variables | BillyOptions,
-  ): Promise<unknown> {
+  ): Promise<InferReturn<T>> {
     const { vars, options } = this.parseArgs(varsOrOptions);
-    return this.run("modify", prompt, vars, options);
+    return this.run("modify", prompt, vars, options) as Promise<InferReturn<T>>;
   }
 
   async validate(
     prompt: string,
     varsOrOptions?: Variables | BillyOptions,
-  ): Promise<unknown> {
+  ): Promise<InferReturn<T>> {
     const { vars, options } = this.parseArgs(varsOrOptions);
-    return this.run("validate", prompt, vars, options);
+    return this.run("validate", prompt, vars, options) as Promise<InferReturn<T>>;
   }
 
   async analyze(
     prompt: string,
     varsOrOptions?: Variables | BillyOptions,
-  ): Promise<unknown> {
+  ): Promise<InferReturn<T>> {
     const { vars, options } = this.parseArgs(varsOrOptions);
-    return this.run("analyze", prompt, vars, options);
+    return this.run("analyze", prompt, vars, options) as Promise<InferReturn<T>>;
   }
 
   async extract(
     prompt: string,
     varsOrOptions?: Variables | BillyOptions,
-  ): Promise<unknown> {
+  ): Promise<InferReturn<T>> {
     const { vars, options } = this.parseArgs(varsOrOptions);
-    return this.run("extract", prompt, vars, options);
+    return this.run("extract", prompt, vars, options) as Promise<InferReturn<T>>;
   }
 
   async execute(
     prompt: string,
     varsOrOptions?: Variables | BillyOptions,
-  ): Promise<unknown> {
+  ): Promise<InferReturn<T>> {
     const { vars, options } = this.parseArgs(varsOrOptions);
-    return this.run("execute", prompt, vars, options);
+    return this.run("execute", prompt, vars, options) as Promise<InferReturn<T>>;
   }
 
   private parseArgs(input?: Variables | BillyOptions): {
@@ -229,57 +231,57 @@ export class Billy {
     return `${taskInstructions[type]}\n\n${processedPrompt}${schemaInstruction}${typeInstruction}${lengthInstruction}`;
   }
 
-  asString(): Billy {
+  asString(): Billy<"string"> {
     this._returnType = "string";
-    return this;
+    return this as unknown as Billy<"string">;
   }
 
-  asNumber(): Billy {
+  asNumber(): Billy<"number"> {
     this._returnType = "number";
-    return this;
+    return this as unknown as Billy<"number">;
   }
 
-  asBoolean(): Billy {
+  asBoolean(): Billy<"boolean"> {
     this._returnType = "boolean";
-    return this;
+    return this as unknown as Billy<"boolean">;
   }
 
-  asArray(): Billy {
+  asArray(): Billy<"array"> {
     this._returnType = "array";
-    return this;
+    return this as unknown as Billy<"array">;
   }
 
-  asObject(): Billy {
+  asObject(): Billy<"object"> {
     this._returnType = "object";
-    return this;
+    return this as unknown as Billy<"object">;
   }
 
-  asJson(): Billy {
+  asJson(): Billy<"json"> {
     this._returnType = "json";
-    return this;
+    return this as unknown as Billy<"json">;
   }
 
-  short(): Billy {
+  short(): Billy<T> {
     this._length = "short";
     return this;
   }
 
-  medium(): Billy {
+  medium(): Billy<T> {
     this._length = "medium";
     return this;
   }
 
-  long(): Billy {
+  long(): Billy<T> {
     this._length = "long";
     return this;
   }
 
-  system(prompt: string): Billy {
+  system(prompt: string): Billy<T> {
     this._systemPrompt = prompt;
     return this;
   }
 
-  schema(def: SchemaDef): Billy {
+  schema(def: SchemaDef): Billy<T> {
     this._schema = def;
     return this;
   }
@@ -340,9 +342,9 @@ export class Billy {
   }
 
   // biome-ignore lint/suspicious/noThenProperty: intentional thenable pattern
-  then<TResult1 = unknown, TResult2 = never>(
+  then<TResult1 = InferReturn<T>, TResult2 = never>(
     onfulfilled?:
-      | ((value: unknown) => TResult1 | PromiseLike<TResult1>)
+      | ((value: InferReturn<T>) => TResult1 | PromiseLike<TResult1>)
       | undefined,
     onrejected?:
       | ((reason: unknown) => TResult2 | PromiseLike<TResult2>)
@@ -352,13 +354,13 @@ export class Billy {
       return Promise.reject(new Error(this._error));
     }
     if (this._results !== undefined) {
-      return Promise.resolve(this._results).then(onfulfilled, onrejected);
+      return Promise.resolve(this._results as InferReturn<T>).then(onfulfilled, onrejected);
     }
     return Promise.reject(new Error("No result yet"));
   }
 
-  get results(): unknown {
-    return this._results;
+  get results(): InferReturn<T> | undefined {
+    return this._results as InferReturn<T> | undefined;
   }
 
   get raw(): string {

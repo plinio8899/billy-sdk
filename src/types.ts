@@ -52,3 +52,14 @@ export interface BillyOptions {
 export interface BillyStream extends AsyncIterable<string> {
   then?: never;
 }
+
+export type ReturnTypeMap = {
+  string: string;
+  number: number;
+  boolean: boolean;
+  array: unknown[];
+  object: Record<string, unknown>;
+  json: unknown;
+};
+
+export type InferReturn<T> = T extends ReturnType ? ReturnTypeMap[T] : unknown;
