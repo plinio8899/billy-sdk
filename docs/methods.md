@@ -167,6 +167,32 @@ You can also set it in the initial configuration:
 const IA = billy({ systemPrompt: "Eres un asistente amigable" });
 ```
 
+## Memory (Conversation History)
+
+Enable automatic memory when creating the instance:
+
+```javascript
+const IA = billy({ memory: 10 }); // remember last 10 turns
+
+await IA.create("Hola, me llamo Juan");
+await IA.create("¿Cómo me llamo?"); // sabe que te llamas Juan
+```
+
+Memory stores user messages and assistant responses. Each `create()` / `modify()` / etc. call adds one turn.
+
+### TTL (Time To Live)
+
+```javascript
+const IA = billy({ memory: 10, memoryTtl: 60000 }); // expira después de 60s
+```
+
+### Methods
+
+| Method | Description |
+|--------|-------------|
+| `IA.clearMemory()` | Reset conversation history |
+| `IA.memory` | Get current history (read-only array) |
+
 ## Properties
 
 After any method call, these properties are available:

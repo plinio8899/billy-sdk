@@ -9,6 +9,8 @@ export interface BillyConfig {
   timeout?: number;
   retries?: number;
   systemPrompt?: string;
+  memory?: number;
+  memoryTtl?: number;
 }
 
 export interface BillyResponse {

@@ -8,13 +8,13 @@ import type {
   InferReturn,
   ResponseLength,
   ReturnType,
-  ReturnTypeMap,
   SchemaDef,
   TaskFunction,
   Variables,
 } from "./types.js";
 
 type BillyStream = AsyncIterable<string>;
+type MemoryMessage = { role: "user" | "assistant"; content: string };
 
 export class Billy<T = unknown> {
   private client: LlmClient;
@@ -25,9 +25,15 @@ export class Billy<T = unknown> {
   private _length: ResponseLength | undefined = undefined;
   private _systemPrompt: string | undefined = undefined;
   private _schema: SchemaDef | undefined = undefined;
+  private _memory: MemoryMessage[] = [];
+  private _memoryMax: number = 0;
+  private _memoryTtl: number = 0;
+  private _memoryTimestamp: number = 0;
 
   constructor(config: BillyConfig = {}) {
     this.client = new LlmClient(config);
+    this._memoryMax = config.memory || 0;
+    this._memoryTtl = config.memoryTtl || 0;
   }
 
   async create(
@@ -91,6 +97,58 @@ export class Billy<T = unknown> {
     return { vars: input as Variables, options: undefined };
   }
 
+  private checkMemoryTtl(): void {
+    if (
+      this._memoryTtl > 0 &&
+      this._memory.length > 0 &&
+      Date.now() - this._memoryTimestamp > this._memoryTtl
+    ) {
+      this._memory = [];
+    }
+  }
+
+  private resolveVariables(prompt: string, variables?: Variables): string {
+    if (!variables || Object.keys(variables).length === 0) return prompt;
+    let result = prompt;
+    for (const [key, value] of Object.entries(variables)) {
+      const placeholder = `{{${key}}}`;
+      const serialized =
+        typeof value === "object"
+          ? JSON.stringify(value, null, 2)
+          : String(value);
+      result = result.replaceAll(placeholder, serialized);
+    }
+    return result;
+  }
+
+  private buildMemoryPrompt(currentPrompt: string): string {
+    this.checkMemoryTtl();
+    if (this._memory.length === 0) return currentPrompt;
+
+    const history = this._memory
+      .slice(-this._memoryMax * 2)
+      .map(
+        (m) =>
+          `${m.role === "user" ? "Usuario" : "Asistente"}: ${m.content}`,
+      )
+      .join("\n");
+
+    return `Historial de la conversación:\n${history}\n\n---\n\n${currentPrompt}`;
+  }
+
+  private addToMemory(role: "user" | "assistant", content: string): void {
+    if (this._memory.length === 0) {
+      this._memoryTimestamp = Date.now();
+    }
+
+    this._memory.push({ role, content });
+
+    const maxEntries = this._memoryMax * 2;
+    if (this._memory.length > maxEntries) {
+      this._memory = this._memory.slice(-maxEntries);
+    }
+  }
+
   private async run(
     type: TaskFunction,
     prompt: string,
@@ -100,14 +158,10 @@ export class Billy<T = unknown> {
     const returnType = options?.as || this._returnType;
     const length = options?.length || this._length;
     const schema = this._schema;
+    const resolvedPrompt = this.resolveVariables(prompt, variables);
+    const memoryPrompt = this.buildMemoryPrompt(resolvedPrompt);
 
-    const fullPrompt = this.buildPrompt(
-      type,
-      prompt,
-      variables,
-      returnType,
-      length,
-    );
+    const fullPrompt = this.buildPrompt(type, memoryPrompt, returnType, length);
 
     const response: BillyResponse = await this.client.chat(
       fullPrompt,
@@ -125,11 +179,27 @@ export class Billy<T = unknown> {
     this._raw = response.raw;
 
     if (schema) {
-      return this.resolveWithSchema(response.content, schema, fullPrompt);
+      const result = await this.resolveWithSchema(
+        response.content,
+        schema,
+        fullPrompt,
+      );
+
+      if (this._memoryMax > 0) {
+        this.addToMemory("user", resolvedPrompt);
+        this.addToMemory("assistant", response.raw);
+      }
+
+      return result;
     }
 
     const parsed = parseResponse(response.content);
     this._results = returnType ? parseAs(returnType, response.content) : parsed;
+
+    if (this._memoryMax > 0) {
+      this.addToMemory("user", resolvedPrompt);
+      this.addToMemory("assistant", response.raw);
+    }
 
     return this._results;
   }
@@ -172,23 +242,9 @@ export class Billy<T = unknown> {
   private buildPrompt(
     type: TaskFunction,
     prompt: string,
-    variables?: Variables,
     returnType?: ReturnType,
     length?: ResponseLength,
   ): string {
-    let processedPrompt = prompt;
-
-    if (variables && Object.keys(variables).length > 0) {
-      for (const [key, value] of Object.entries(variables)) {
-        const placeholder = `{{${key}}}`;
-        const serialized =
-          typeof value === "object"
-            ? JSON.stringify(value, null, 2)
-            : String(value);
-        processedPrompt = processedPrompt.replaceAll(placeholder, serialized);
-      }
-    }
-
     const taskInstructions: Record<TaskFunction, string> = {
       create: `Genera contenido nuevo basándote en la siguiente solicitud:`,
       modify: `Transforma o modifica el siguiente contenido según las instrucciones:`,
@@ -228,7 +284,7 @@ export class Billy<T = unknown> {
       : "";
     const lengthInstruction = length ? lengthInstructions[length] : "";
 
-    return `${taskInstructions[type]}\n\n${processedPrompt}${schemaInstruction}${typeInstruction}${lengthInstruction}`;
+    return `${taskInstructions[type]}\n\n${prompt}${schemaInstruction}${typeInstruction}${lengthInstruction}`;
   }
 
   asString(): Billy<"string"> {
@@ -294,14 +350,10 @@ export class Billy<T = unknown> {
     const returnType = options?.as || this._returnType;
     const length = options?.length || this._length;
     const schema = this._schema;
+    const resolvedPrompt = this.resolveVariables(prompt, vars);
+    const memoryPrompt = this.buildMemoryPrompt(resolvedPrompt);
 
-    const fullPrompt = this.buildPrompt(
-      "create",
-      prompt,
-      vars,
-      returnType,
-      length,
-    );
+    const fullPrompt = this.buildPrompt("create", memoryPrompt, returnType, length);
 
     const providerStream = this.client.chatStream(
       fullPrompt,
@@ -337,8 +389,22 @@ export class Billy<T = unknown> {
             ? parseAs(returnType, fullContent)
             : parsed;
         }
+
+        if (this._memoryMax > 0) {
+          this.addToMemory("user", resolvedPrompt);
+          this.addToMemory("assistant", fullContent);
+        }
       }
     }
+  }
+
+  clearMemory(): void {
+    this._memory = [];
+    this._memoryTimestamp = 0;
+  }
+
+  get memory(): readonly MemoryMessage[] {
+    return this._memory;
   }
 
   // biome-ignore lint/suspicious/noThenProperty: intentional thenable pattern

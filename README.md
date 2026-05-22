@@ -46,6 +46,7 @@ console.log(IA.results);
 | **Variable Injection** | `create("prompt {{var}}", { var: value })` |
 | **CLI** | `npx billy-sdk config set <key>` |
 | **Streaming** | `IA.stream()` — consume responses in real time |
+| **Memory** | `billy({ memory: 10 })` — automatic conversation history |
 | **Retry & Timeout** | Built-in, configurable |
 
 ## One-Minute Setup

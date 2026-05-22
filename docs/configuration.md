@@ -28,6 +28,8 @@ const IA = billy({
 | `retries` | `number` | `3` | Number of retry attempts on failure |
 | `apiKey` | `string` | — | API key (overrides env var and config file) |
 | `systemPrompt` | `string` | — | System prompt to define AI's role or behavior |
+| `memory` | `number` | `0` | Number of conversation turns to remember (0 = disabled) |
+| `memoryTtl` | `number` | `0` | Memory TTL in ms (0 = no expiry) |
 
 ## Provider Defaults
 
