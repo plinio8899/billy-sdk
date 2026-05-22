@@ -2,7 +2,7 @@ import { chmodSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "n
 import { homedir } from "node:os";
 import { resolve } from "node:path";
 
-const CONFIG_DIR = ".billy-agent";
+const CONFIG_DIR = ".billy-sdk";
 const CONFIG_FILE = "config.json";
 
 function parseEnvFile(): Record<string, string> {

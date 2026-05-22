@@ -13,14 +13,14 @@ import {
 const tmpHome = join(tmpdir(), "billy-test-" + Date.now());
 
 afterEach(() => {
-  const configDir = join(tmpHome, ".billy-agent");
+  const configDir = join(tmpHome, ".billy-sdk");
   if (existsSync(configDir)) {
     rmSync(configDir, { recursive: true, force: true });
   }
 });
 
 describe("CLI - config file", () => {
-  it("guarda y lee apiKey en ~/.billy-agent/config.json", () => {
+  it("guarda y lee apiKey en ~/.billy-sdk/config.json", () => {
     saveApiKey("gsk_test_key_123", tmpHome);
     assert.equal(readApiKey(tmpHome), "gsk_test_key_123");
   });

@@ -1,6 +1,6 @@
 # Providers
 
-billy-agent supports multiple AI providers. Groq is the default with zero extra dependencies.
+billy-sdk supports multiple AI providers. Groq is the default with zero extra dependencies.
 
 ## Groq (Default)
 
@@ -59,4 +59,4 @@ When multiple sources provide an API key, the priority is:
 1. Passed in code: `billy({ apiKey: "..." })`
 2. Environment variable: `GROQ_API_KEY`, `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`
 3. `.env` file in project root (automatically detected)
-4. Config file: `~/.billy-agent/config.json` (set via `npx billy-agent config set`)
+4. Config file: `~/.billy-sdk/config.json` (set via `npx billy-sdk config set`)

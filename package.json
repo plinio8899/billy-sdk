@@ -1,7 +1,7 @@
 {
-  "name": "billy-agent",
-  "version": "1.0.6",
-  "description": "Simple AI for your projects - generate, modify, validate, analyze, extract, and execute with natural language prompts",
+  "name": "billy-sdk",
+  "version": "1.0.0",
+  "description": "Simple AI SDK for Node.js — generate, modify, validate, analyze, extract, and execute with natural language prompts",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "type": "module",
@@ -11,7 +11,7 @@
     "LICENSE"
   ],
   "bin": {
-    "billy-agent": "dist/cli.js"
+    "billy-sdk": "dist/cli.js"
   },
   "scripts": {
     "build": "tsc",
@@ -29,9 +29,12 @@
     "llm",
     "openai",
     "groq",
-    "agent",
+    "sdk",
     "generative",
-    "codegen"
+    "ai-sdk",
+    "llm-wrapper",
+    "typescript",
+    "nodejs"
   ],
   "author": {
     "name": "Plinio",
@@ -40,12 +43,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/plinio8899/billy-agent.git"
+    "url": "git+https://github.com/plinio8899/billy-sdk.git"
   },
   "bugs": {
-    "url": "https://github.com/plinio8899/billy-agent/issues"
+    "url": "https://github.com/plinio8899/billy-sdk/issues"
   },
-  "homepage": "https://github.com/plinio8899/billy-agent#readme",
+  "homepage": "https://github.com/plinio8899/billy-sdk#readme",
   "publishConfig": {
     "access": "public"
   },

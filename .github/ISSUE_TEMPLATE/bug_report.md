@@ -13,7 +13,7 @@ Una descripción clara y concisa del bug.
 **Para reproducir**
 Código mínimo o pasos para reproducir:
 ```js
-import billy from 'billy-agent';
+import billy from 'billy-sdk';
 const IA = billy();
 await IA.create('test');
 ```
@@ -23,7 +23,7 @@ Qué esperabas que ocurriera.
 
 **Entorno**
 - Node version:
-- billy-agent version:
+- billy-sdk version:
 - OS:
 
 **Contexto adicional**

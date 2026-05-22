@@ -1,46 +1,46 @@
 import { defineConfig } from "vitepress";
 
 export default defineConfig({
-  title: "billy-agent",
+  title: "billy-sdk",
   description:
-    "Simple AI for your projects - generate, modify, validate, analyze, extract, and execute with natural language prompts",
-  base: "/billy-agent/",
+    "Simple AI SDK for Node.js — generate, modify, validate, analyze, extract, and execute with natural language prompts",
+  base: "/billy-sdk/",
   head: [
-    ["meta", { property: "og:title", content: "billy-agent" }],
+    ["meta", { property: "og:title", content: "billy-sdk" }],
     [
       "meta",
       {
         property: "og:description",
         content:
-          "Simple AI for your projects — generate, modify, validate, analyze, extract, and execute with natural language prompts",
+          "Simple AI SDK for Node.js — generate, modify, validate, analyze, extract, and execute with natural language prompts",
       },
     ],
     [
       "meta",
-      { property: "og:image", content: "/billy-agent/og-image.png" },
+      { property: "og:image", content: "/billy-sdk/og-image.png" },
     ],
-    ["meta", { property: "og:url", content: "https://plinio8899.github.io/billy-agent/" }],
+    ["meta", { property: "og:url", content: "https://plinio8899.github.io/billy-sdk/" }],
     ["meta", { property: "og:type", content: "website" }],
     ["meta", { name: "twitter:card", content: "summary_large_image" }],
-    ["meta", { name: "twitter:title", content: "billy-agent" }],
+    ["meta", { name: "twitter:title", content: "billy-sdk" }],
     [
       "meta",
       {
         name: "twitter:description",
         content:
-          "Simple AI for your projects — generate, modify, validate, analyze, extract, and execute with natural language prompts",
+          "Simple AI SDK for Node.js — generate, modify, validate, analyze, extract, and execute with natural language prompts",
       },
     ],
     [
       "meta",
-      { name: "twitter:image", content: "/billy-agent/og-image.png" },
+      { name: "twitter:image", content: "/billy-sdk/og-image.png" },
     ],
   ],
   themeConfig: {
     nav: [
       { text: "Home", link: "/" },
       { text: "Guides", link: "/getting-started" },
-      { text: "GitHub", link: "https://github.com/plinio8899/billy-agent" },
+      { text: "GitHub", link: "https://github.com/plinio8899/billy-sdk" },
     ],
     sidebar: [
       {
@@ -70,7 +70,7 @@ export default defineConfig({
       },
     ],
     socialLinks: [
-      { icon: "github", link: "https://github.com/plinio8899/billy-agent" },
+      { icon: "github", link: "https://github.com/plinio8899/billy-sdk" },
     ],
     footer: {
       message: "Released under the MIT License.",

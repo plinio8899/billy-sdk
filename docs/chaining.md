@@ -1,6 +1,6 @@
 # Method Chaining
 
-billy-agent supports a fluent API style for configuring calls.
+billy-sdk supports a fluent API style for configuring calls.
 
 ## Basic Chain
 

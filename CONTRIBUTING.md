@@ -1,10 +1,10 @@
-# Contribuyendo a billy-agent
+# Contribuyendo a billy-sdk
 
 Gracias por tu interés en contribuir. Estas son las guías para mantener el proyecto consistente.
 
 ## Reportar bugs
 
-1. Verifica que el bug no esté ya reportado en [Issues](https://github.com/plinio8899/billy-agent/issues)
+1. Verifica que el bug no esté ya reportado en [Issues](https://github.com/plinio8899/billy-sdk/issues)
 2. Crea un nuevo issue con:
    - Versión del package y Node.js
    - Código mínimo para reproducirlo

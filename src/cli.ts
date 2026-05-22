@@ -22,7 +22,7 @@ if (command === "config") {
   if (subCommand === "set") {
     const apiKey = args[2];
     if (!apiKey) {
-      console.error("Usage: billy-agent config set <api-key>");
+      console.error("Usage: billy-sdk config set <api-key>");
       console.error("Get your free API key at: https://console.groq.com/");
       process.exit(1);
     }
@@ -30,14 +30,14 @@ if (command === "config") {
     saveApiKey(apiKey);
     console.log(`✅ API key saved to ${getConfigPath()}`);
     console.log("⚠️  Stored in plain text. Use env vars for production.");
-    console.log("   You can now use billy-agent without setting GROQ_API_KEY");
+    console.log("   You can now use billy-sdk without setting GROQ_API_KEY");
   } else if (subCommand === "show") {
     const key = readApiKey();
     if (key) {
       console.log(`API Key: ${maskKey(key)}`);
     } else {
       console.log("No API key found.");
-      console.log("Run: billy-agent config set <api-key>");
+      console.log("Run: billy-sdk config set <api-key>");
     }
   } else if (subCommand === "remove") {
     if (hasConfig()) {
@@ -48,22 +48,22 @@ if (command === "config") {
     }
   } else {
     console.log("Commands:");
-    console.log("  billy-agent config set <api-key>  - Save API key");
-    console.log("  billy-agent config show           - Show masked key");
+    console.log("  billy-sdk config set <api-key>  - Save API key");
+    console.log("  billy-sdk config show           - Show masked key");
     console.log(
-      "  billy-agent config remove         - Remove API key from config",
+      "  billy-sdk config remove         - Remove API key from config",
     );
   }
 } else if (command === "init") {
   console.log(
-    "Initialize billy-agent in your project: npm install billy-agent",
+    "Initialize billy-sdk in your project: npm install billy-sdk",
   );
 } else {
-  console.log("billy-agent - Simple AI for your projects");
+  console.log("billy-sdk - Simple AI for your projects");
   console.log("");
   console.log("Commands:");
-  console.log("  billy-agent init      - Show install instructions");
-  console.log("  billy-agent config   - Manage API key");
+  console.log("  billy-sdk init      - Show install instructions");
+  console.log("  billy-sdk config   - Manage API key");
   console.log("");
   console.log("Get your free API key at: https://console.groq.com/");
 }

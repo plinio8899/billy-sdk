@@ -3,7 +3,7 @@
 Pass a config object to the `billy()` factory function:
 
 ```javascript
-import billy from "billy-agent";
+import billy from "billy-sdk";
 
 const IA = billy({
   provider: "groq",

@@ -1,4 +1,4 @@
-import billy from 'billy-agent';
+import billy from 'billy-sdk';
 
 const IA = billy({ apiKey: process.env.GROQ_API_KEY });
 

@@ -108,7 +108,7 @@ const result = await IA
 
 ### Automatic retry on validation failure
 
-If the LLM returns something that doesn't match the schema, billy-agent automatically retries with the validation errors as feedback.
+If the LLM returns something that doesn't match the schema, billy-sdk automatically retries with the validation errors as feedback.
 
 ## .system(prompt)
 

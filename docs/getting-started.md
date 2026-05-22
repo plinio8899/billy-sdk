@@ -3,14 +3,14 @@
 ## Installation
 
 ```bash
-npm install billy-agent
+npm install billy-sdk
 ```
 
 Requires Node.js 18 or higher.
 
 ## API Key
 
-billy-agent uses Groq's free API. Get your key at [console.groq.com](https://console.groq.com/).
+billy-sdk uses Groq's free API. Get your key at [console.groq.com](https://console.groq.com/).
 
 ### Option 1: Environment Variable (Recommended)
 
@@ -29,15 +29,15 @@ GROQ_API_KEY=gsk_your_api_key_here
 ### Option 2: CLI (Quick Setup)
 
 ```bash
-npx billy-agent config set gsk_your_api_key_here
+npx billy-sdk config set gsk_your_api_key_here
 ```
 
-Saves to `~/.billy-agent/config.json`. Use `npx billy-agent config show` to verify.
+Saves to `~/.billy-sdk/config.json`. Use `npx billy-sdk config show` to verify.
 
 ### Option 3: In Code
 
 ```javascript
-import billy from "billy-agent";
+import billy from "billy-sdk";
 
 const IA = billy({ apiKey: "gsk_your_api_key_here" });
 ```
@@ -47,7 +47,7 @@ const IA = billy({ apiKey: "gsk_your_api_key_here" });
 ## Quick Start
 
 ```javascript
-import billy from "billy-agent";
+import billy from "billy-sdk";
 
 const IA = billy();
 

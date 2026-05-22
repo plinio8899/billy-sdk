@@ -3,7 +3,7 @@
 layout: home
 
 hero:
-  name: "billy-agent"
+  name: "billy-sdk"
   text: "Simple AI for your projects"
   tagline: Generate, modify, validate, analyze, extract, and execute with natural language prompts
   actions:
@@ -12,7 +12,7 @@ hero:
       link: /getting-started
     - theme: alt
       text: View on GitHub
-      link: https://github.com/plinio8899/billy-agent
+      link: https://github.com/plinio8899/billy-sdk
 
 features:
   - title: Multi-Provider
