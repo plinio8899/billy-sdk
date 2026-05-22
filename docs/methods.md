@@ -110,6 +110,38 @@ const result = await IA
 
 If the LLM returns something that doesn't match the schema, billy-sdk automatically retries with the validation errors as feedback.
 
+## .stream(prompt, variables?)
+
+Stream the response chunk by chunk in real time. Returns an `AsyncIterable<string>`.
+
+```javascript
+const stream = IA.stream("Escribe un cuento corto");
+
+for await (const chunk of stream) {
+  process.stdout.write(chunk); // aparece en tiempo real
+}
+
+console.log(IA.results); // resultado completo al finalizar
+```
+
+Works with chaining:
+
+```javascript
+const stream = IA.asObject()
+  .schema({ titulo: "string", contenido: "string" })
+  .stream("Dame un cuento estructurado");
+
+for await (const chunk of stream) {
+  process.stdout.write(chunk);
+}
+
+console.log(IA.results); // objeto validado
+```
+
+> **Note:** Schema validation runs after all chunks arrive, not per-chunk.
+
+📄 `examples/streaming.mjs`
+
 ## .system(prompt)
 
 Set a system prompt to define the AI's role, behavior, or constraints. Chainable.

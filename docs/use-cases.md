@@ -151,7 +151,7 @@ const productos = await IA.asArray().create(
 );
 ```
 
-📄 `examples/test-data-generator.mjs`
+📄 `examples/data-generator.mjs`
 
 ---
 

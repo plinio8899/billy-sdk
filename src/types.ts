@@ -48,3 +48,7 @@ export interface BillyOptions {
   as?: ReturnType;
   length?: ResponseLength;
 }
+
+export interface BillyStream extends AsyncIterable<string> {
+  then?: never;
+}

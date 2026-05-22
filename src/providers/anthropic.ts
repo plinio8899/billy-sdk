@@ -97,4 +97,40 @@ export class AnthropicProvider implements ChatProvider {
   private delay(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms));
   }
+
+  async *chatStream(
+    prompt: string,
+    systemPrompt?: string,
+  ): AsyncIterable<string> {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), this.timeout);
+
+    try {
+      const stream = await this.client.messages.create(
+        {
+          model: this.model,
+          max_tokens: this.maxTokens,
+          system: systemPrompt || undefined,
+          messages: [{ role: "user", content: prompt }],
+          temperature: this.temperature,
+          stream: true,
+        },
+        {
+          // biome-ignore lint/suspicious/noExplicitAny: AbortSignal type mismatch
+          signal: controller.signal as any,
+        },
+      );
+
+      for await (const chunk of stream) {
+        if (
+          chunk.type === "content_block_delta" &&
+          chunk.delta?.type === "text_delta"
+        ) {
+          yield chunk.delta.text;
+        }
+      }
+    } finally {
+      clearTimeout(timeoutId);
+    }
+  }
 }

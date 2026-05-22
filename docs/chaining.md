@@ -43,12 +43,27 @@ Each method returns the same instance, so you can chain indefinitely.
 | `.medium()` | Concise response |
 | `.long()` | Detailed response |
 
+### Terminal Operations
+
+Chain methods are consumed by calling one of these:
+
+| Method | Returns |
+|--------|---------|
+| `.create()` | `Promise<unknown>` — full response |
+| `.stream()` | `AsyncIterable<string>` — chunk by chunk |
+
 ## Full Chain Example
 
 ```javascript
 const result = await IA.asObject()
   .long()
   .create("Dame un perfil detallado de un desarrollador fullstack");
+
+// Streaming variant
+const stream = IA.asObject()
+  .long()
+  .stream("Dame un perfil detallado");
+for await (const chunk of stream) { process.stdout.write(chunk); }
 ```
 
 ## Reusing Configuration

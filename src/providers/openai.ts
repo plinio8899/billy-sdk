@@ -103,4 +103,41 @@ export class OpenAIProvider implements ChatProvider {
   private delay(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms));
   }
+
+  async *chatStream(
+    prompt: string,
+    systemPrompt?: string,
+  ): AsyncIterable<string> {
+    const messages: Message[] = [];
+    if (systemPrompt) {
+      messages.push({ role: "system", content: systemPrompt });
+    }
+    messages.push({ role: "user", content: prompt });
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), this.timeout);
+
+    try {
+      const stream = await this.client.chat.completions.create(
+        {
+          model: this.model,
+          messages,
+          temperature: this.temperature,
+          max_tokens: this.maxTokens,
+          stream: true,
+        },
+        {
+          // biome-ignore lint/suspicious/noExplicitAny: AbortSignal type mismatch
+          signal: controller.signal as any,
+        },
+      );
+
+      for await (const chunk of stream) {
+        const content = chunk.choices[0]?.delta?.content || "";
+        if (content) yield content;
+      }
+    } finally {
+      clearTimeout(timeoutId);
+    }
+  }
 }

@@ -1,3 +1,4 @@
+// Renamed from test-data-generator.mjs to avoid node --test detection
 import billy from 'billy-sdk';
 
 const IA = billy({ apiKey: process.env.GROQ_API_KEY });

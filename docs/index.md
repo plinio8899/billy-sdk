@@ -30,6 +30,9 @@ features:
   - title: Method Chaining
     details: Fluent API style — IA.asNumber().short().create("prompt").
     link: /chaining
+  - title: Streaming
+    details: Real-time streaming responses with AsyncIterable — consume chunks as they arrive.
+    link: /methods#stream-prompt-variables
   - title: Retry & Timeout
     details: Built-in retry logic and configurable timeout for production reliability.
     link: /configuration

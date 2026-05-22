@@ -45,6 +45,7 @@ console.log(IA.results);
 | **Method Chaining** | `IA.asNumber().short().create("prompt")` |
 | **Variable Injection** | `create("prompt {{var}}", { var: value })` |
 | **CLI** | `npx billy-sdk config set <key>` |
+| **Streaming** | `IA.stream()` — consume responses in real time |
 | **Retry & Timeout** | Built-in, configurable |
 
 ## One-Minute Setup

@@ -12,6 +12,8 @@ import type {
   Variables,
 } from "./types.js";
 
+type BillyStream = AsyncIterable<string>;
+
 export class Billy {
   private client: LlmClient;
   private _results: unknown = undefined;
@@ -280,6 +282,61 @@ export class Billy {
   schema(def: SchemaDef): Billy {
     this._schema = def;
     return this;
+  }
+
+  async *stream(
+    prompt: string,
+    varsOrOptions?: Variables | BillyOptions,
+  ): BillyStream {
+    const { vars, options } = this.parseArgs(varsOrOptions);
+    const returnType = options?.as || this._returnType;
+    const length = options?.length || this._length;
+    const schema = this._schema;
+
+    const fullPrompt = this.buildPrompt(
+      "create",
+      prompt,
+      vars,
+      returnType,
+      length,
+    );
+
+    const providerStream = this.client.chatStream(
+      fullPrompt,
+      this._systemPrompt,
+    );
+
+    let fullContent = "";
+
+    try {
+      for await (const chunk of providerStream) {
+        fullContent += chunk;
+        yield chunk;
+      }
+    } finally {
+      if (fullContent) {
+        this._error = undefined;
+        this._raw = fullContent;
+
+        if (schema) {
+          try {
+            this._results = await this.resolveWithSchema(
+              fullContent,
+              schema,
+              fullPrompt,
+            );
+          } catch (err) {
+            this._error = (err as Error).message;
+            throw err;
+          }
+        } else {
+          const parsed = parseResponse(fullContent);
+          this._results = returnType
+            ? parseAs(returnType, fullContent)
+            : parsed;
+        }
+      }
+    }
   }
 
   // biome-ignore lint/suspicious/noThenProperty: intentional thenable pattern

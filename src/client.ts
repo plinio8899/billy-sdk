@@ -35,4 +35,9 @@ export class LlmClient {
     const sp = systemPrompt ?? this.systemPrompt;
     return this.provider.chat(prompt, sp || undefined);
   }
+
+  chatStream(prompt: string, systemPrompt?: string): AsyncIterable<string> {
+    const sp = systemPrompt ?? this.systemPrompt;
+    return this.provider.chatStream(prompt, sp || undefined);
+  }
 }
