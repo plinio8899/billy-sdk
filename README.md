@@ -66,7 +66,7 @@ echo 'import billy from "billy-sdk"; const IA = billy(); console.log(await IA.cr
 
 ## Examples
 
-See the [`examples/`](examples/) directory for runnable scripts.
+See the [`examples/`](examples/) directory for 11 runnable scripts: invoice extraction, ticket classification, NL-to-SQL, chatbot, sentiment analysis, email generator, summarizer, content moderation, test data generation, and basic RAG.
 
 ## Requirements
 
