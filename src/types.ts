@@ -11,6 +11,8 @@ export interface BillyConfig {
   systemPrompt?: string;
   memory?: number;
   memoryTtl?: number;
+  /** @internal Used for injecting a mock provider in tests */
+  providerInstance?: unknown;
 }
 
 export interface BillyResponse {

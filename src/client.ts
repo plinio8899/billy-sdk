@@ -20,14 +20,18 @@ export class LlmClient {
   private systemPrompt: string;
 
   constructor(config: BillyConfig = {}) {
-    const providerType: ProviderType = config.provider || "groq";
-    const Provider = providerMap[providerType];
-    if (!Provider) {
-      throw new Error(
-        `Unknown provider: ${providerType}. Available: ${Object.keys(providerMap).join(", ")}`,
-      );
+    if (config.providerInstance) {
+      this.provider = config.providerInstance as ChatProvider;
+    } else {
+      const providerType: ProviderType = config.provider || "groq";
+      const Provider = providerMap[providerType];
+      if (!Provider) {
+        throw new Error(
+          `Unknown provider: ${providerType}. Available: ${Object.keys(providerMap).join(", ")}`,
+        );
+      }
+      this.provider = new Provider(config);
     }
-    this.provider = new Provider(config);
     this.systemPrompt = config.systemPrompt || "";
   }
 
