@@ -5,6 +5,7 @@ import type {
   BillyConfig,
   BillyOptions,
   BillyResponse,
+  BillyStream,
   InferReturn,
   ResponseLength,
   ReturnType,
@@ -13,7 +14,6 @@ import type {
   Variables,
 } from "./types.js";
 
-type BillyStream = AsyncIterable<string>;
 type MemoryMessage = { role: "user" | "assistant"; content: string };
 
 export class Billy<T = unknown> {
