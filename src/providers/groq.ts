@@ -1,25 +1,15 @@
 import Groq from "groq-sdk";
 import { resolveApiKey } from "../config.js";
-import type { BillyConfig, BillyResponse } from "../types.js";
-import type { ChatProvider } from "./types.js";
+import type { BillyConfig } from "../types.js";
+import { BaseProvider } from "./base.js";
 
 type Message = { role: "system" | "user"; content: string };
 
-export class GroqProvider implements ChatProvider {
+export class GroqProvider extends BaseProvider {
   private client: Groq;
-  private model: string;
-  private temperature: number;
-  private maxTokens: number;
-  private timeout: number;
-  private retries: number;
 
   constructor(config: BillyConfig = {}) {
-    this.model = config.model || "llama-3.3-70b-versatile";
-    this.temperature = config.temperature ?? 0.7;
-    this.maxTokens = config.maxTokens || 1000;
-    this.timeout = config.timeout || 30000;
-    this.retries = config.retries || 3;
-
+    super(config);
     const apiKey = resolveApiKey(config.apiKey, "GROQ_API_KEY");
     if (!apiKey) {
       throw new Error(
@@ -31,97 +21,58 @@ export class GroqProvider implements ChatProvider {
           "\n  4. Run: npx billy-sdk config set your-key",
       );
     }
-
     this.client = new Groq({ apiKey });
   }
 
-  async chat(prompt: string, systemPrompt?: string): Promise<BillyResponse> {
-    let lastError: Error | undefined;
+  protected defaultModel(): string {
+    return "llama-3.3-70b-versatile";
+  }
 
+  protected buildMessages(prompt: string, systemPrompt?: string): Message[] {
     const messages: Message[] = [];
-    if (systemPrompt) {
-      messages.push({ role: "system", content: systemPrompt });
-    }
+    if (systemPrompt) messages.push({ role: "system", content: systemPrompt });
     messages.push({ role: "user", content: prompt });
-
-    for (let attempt = 1; attempt <= this.retries; attempt++) {
-      try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), this.timeout);
-
-        const response = await this.client.chat.completions.create(
-          {
-            model: this.model,
-            messages,
-            temperature: this.temperature,
-            max_tokens: this.maxTokens,
-          },
-          {
-            // biome-ignore lint/suspicious/noExplicitAny: AbortSignal type mismatch
-            signal: controller.signal as any,
-          },
-        );
-
-        clearTimeout(timeoutId);
-
-        const content = response.choices[0]?.message?.content || "";
-
-        return {
-          content: content.trim(),
-        };
-      } catch (error: unknown) {
-        lastError = error as Error;
-
-        if (attempt < this.retries) {
-          await this.delay(1000 * attempt);
-        }
-      }
-    }
-
-    return {
-      content: "",
-      error: lastError?.message || "Unknown error",
-    };
+    return messages;
   }
 
-  private delay(ms: number): Promise<void> {
-    return new Promise((resolve) => setTimeout(resolve, ms));
+  protected async completion(
+    messages: Message[],
+    _systemPrompt: string | undefined,
+    signal: AbortSignal,
+  ): Promise<{ content: string }> {
+    const response = await this.client.chat.completions.create(
+      {
+        model: this.model,
+        messages,
+        temperature: this.temperature,
+        max_tokens: this.maxTokens,
+      },
+      // biome-ignore lint/suspicious/noExplicitAny: AbortSignal type mismatch
+      { signal: signal as any },
+    );
+    return { content: response.choices[0]?.message?.content || "" };
   }
 
-  async *chatStream(
-    prompt: string,
-    systemPrompt?: string,
+  protected async *streamCompletion(
+    messages: Message[],
+    _systemPrompt: string | undefined,
+    signal: AbortSignal,
   ): AsyncIterable<string> {
-    const messages: Message[] = [];
-    if (systemPrompt) {
-      messages.push({ role: "system", content: systemPrompt });
-    }
-    messages.push({ role: "user", content: prompt });
+    const stream = await this.client.chat.completions.create(
+      {
+        model: this.model,
+        messages,
+        temperature: this.temperature,
+        max_tokens: this.maxTokens,
+        stream: true,
+      },
+      // biome-ignore lint/suspicious/noExplicitAny: AbortSignal type mismatch
+      { signal: signal as any },
+    );
 
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), this.timeout);
-
-    try {
-      const stream = await this.client.chat.completions.create(
-        {
-          model: this.model,
-          messages,
-          temperature: this.temperature,
-          max_tokens: this.maxTokens,
-          stream: true,
-        },
-        {
-          // biome-ignore lint/suspicious/noExplicitAny: AbortSignal type mismatch
-          signal: controller.signal as any,
-        },
-      );
-
-      for await (const chunk of stream) {
-        const content = chunk.choices[0]?.delta?.content || "";
-        if (content) yield content;
-      }
-    } finally {
-      clearTimeout(timeoutId);
+    for await (const chunk of stream) {
+      const content = chunk.choices[0]?.delta?.content || "";
+      if (content) yield content;
     }
   }
 }

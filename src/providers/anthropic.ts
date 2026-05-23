@@ -1,26 +1,18 @@
 import { createRequire } from "node:module";
 import { resolveApiKey } from "../config.js";
-import type { BillyConfig, BillyResponse } from "../types.js";
-import type { ChatProvider } from "./types.js";
+import type { BillyConfig } from "../types.js";
+import { BaseProvider } from "./base.js";
 
 const require = createRequire(import.meta.url);
 
-export class AnthropicProvider implements ChatProvider {
+type Message = { role: "system" | "user"; content: string };
+
+export class AnthropicProvider extends BaseProvider {
   // biome-ignore lint/suspicious/noExplicitAny: optional SDK dependency
   private client: any;
-  private model: string;
-  private temperature: number;
-  private maxTokens: number;
-  private timeout: number;
-  private retries: number;
 
   constructor(config: BillyConfig = {}) {
-    this.model = config.model || "claude-3-haiku-20240307";
-    this.temperature = config.temperature ?? 0.7;
-    this.maxTokens = config.maxTokens || 1000;
-    this.timeout = config.timeout || 30000;
-    this.retries = config.retries || 3;
-
+    super(config);
     const apiKey = resolveApiKey(config.apiKey, "ANTHROPIC_API_KEY");
     if (!apiKey) {
       throw new Error(
@@ -28,7 +20,6 @@ export class AnthropicProvider implements ChatProvider {
           "Set ANTHROPIC_API_KEY environment variable or pass apiKey in config.",
       );
     }
-
     this.client = this.loadClient(apiKey);
   }
 
@@ -45,87 +36,58 @@ export class AnthropicProvider implements ChatProvider {
     }
   }
 
-  async chat(prompt: string, systemPrompt?: string): Promise<BillyResponse> {
-    let lastError: Error | undefined;
-
-    for (let attempt = 1; attempt <= this.retries; attempt++) {
-      try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), this.timeout);
-
-        const response = await this.client.messages.create(
-          {
-            model: this.model,
-            max_tokens: this.maxTokens,
-            system: systemPrompt || undefined,
-            messages: [{ role: "user", content: prompt }],
-            temperature: this.temperature,
-          },
-          {
-            // biome-ignore lint/suspicious/noExplicitAny: AbortSignal type mismatch
-            signal: controller.signal as any,
-          },
-        );
-
-        clearTimeout(timeoutId);
-
-        const content = response.content?.[0]?.text || "";
-
-        return {
-          content: content.trim(),
-        };
-      } catch (error: unknown) {
-        lastError = error as Error;
-
-        if (attempt < this.retries) {
-          await this.delay(1000 * attempt);
-        }
-      }
-    }
-
-    return {
-      content: "",
-      error: lastError?.message || "Unknown error",
-    };
+  protected defaultModel(): string {
+    return "claude-3-haiku-20240307";
   }
 
-  private delay(ms: number): Promise<void> {
-    return new Promise((resolve) => setTimeout(resolve, ms));
+  protected buildMessages(prompt: string, _systemPrompt?: string): Message[] {
+    return [{ role: "user", content: prompt }];
   }
 
-  async *chatStream(
-    prompt: string,
-    systemPrompt?: string,
+  protected async completion(
+    messages: Message[],
+    systemPrompt: string | undefined,
+    signal: AbortSignal,
+  ): Promise<{ content: string }> {
+    const response = await this.client.messages.create(
+      {
+        model: this.model,
+        max_tokens: this.maxTokens,
+        system: systemPrompt || undefined,
+        messages,
+        temperature: this.temperature,
+      },
+      // biome-ignore lint/suspicious/noExplicitAny: AbortSignal type mismatch
+      { signal: signal as any },
+    );
+    return { content: response.content?.[0]?.text || "" };
+  }
+
+  protected async *streamCompletion(
+    messages: Message[],
+    systemPrompt: string | undefined,
+    signal: AbortSignal,
   ): AsyncIterable<string> {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), this.timeout);
+    const stream = await this.client.messages.create(
+      {
+        model: this.model,
+        max_tokens: this.maxTokens,
+        system: systemPrompt || undefined,
+        messages,
+        temperature: this.temperature,
+        stream: true,
+      },
+      // biome-ignore lint/suspicious/noExplicitAny: AbortSignal type mismatch
+      { signal: signal as any },
+    );
 
-    try {
-      const stream = await this.client.messages.create(
-        {
-          model: this.model,
-          max_tokens: this.maxTokens,
-          system: systemPrompt || undefined,
-          messages: [{ role: "user", content: prompt }],
-          temperature: this.temperature,
-          stream: true,
-        },
-        {
-          // biome-ignore lint/suspicious/noExplicitAny: AbortSignal type mismatch
-          signal: controller.signal as any,
-        },
-      );
-
-      for await (const chunk of stream) {
-        if (
-          chunk.type === "content_block_delta" &&
-          chunk.delta?.type === "text_delta"
-        ) {
-          yield chunk.delta.text;
-        }
+    for await (const chunk of stream) {
+      if (
+        chunk.type === "content_block_delta" &&
+        chunk.delta?.type === "text_delta"
+      ) {
+        yield chunk.delta.text;
       }
-    } finally {
-      clearTimeout(timeoutId);
     }
   }
 }
