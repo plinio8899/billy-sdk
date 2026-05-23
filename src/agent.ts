@@ -163,6 +163,8 @@ export class Billy<T = unknown> {
   ): Promise<unknown> {
     const returnType = options?.as || this._returnType;
     const length = options?.length || this._length;
+    this._returnType = undefined;
+    this._length = undefined;
     const schema = this._schema;
     const resolvedPrompt = this.resolveVariables(prompt, variables);
     const memoryPrompt = this.buildMemoryPrompt(resolvedPrompt);
@@ -360,6 +362,8 @@ export class Billy<T = unknown> {
     const { vars, options } = this.parseArgs(varsOrOptions);
     const returnType = options?.as || this._returnType;
     const length = options?.length || this._length;
+    this._returnType = undefined;
+    this._length = undefined;
     const schema = this._schema;
     const resolvedPrompt = this.resolveVariables(prompt, vars);
     const memoryPrompt = this.buildMemoryPrompt(resolvedPrompt);
