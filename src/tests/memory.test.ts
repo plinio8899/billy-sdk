@@ -1,9 +1,23 @@
 // biome-ignore lint/suspicious/noExplicitAny: test access to private members
 import assert from "node:assert/strict";
-import { describe, it } from "node:test";
+import { after, before, describe, it } from "node:test";
 import type { BillyConfig, BillyResponse } from "../types.js";
 import type { ChatProvider } from "../providers/types.js";
 import { Billy } from "../agent.js";
+
+const ORIGINAL_KEY = process.env.GROQ_API_KEY;
+
+before(() => {
+  process.env.GROQ_API_KEY = "test-key-123";
+});
+
+after(() => {
+  if (ORIGINAL_KEY) {
+    process.env.GROQ_API_KEY = ORIGINAL_KEY;
+  } else {
+    delete process.env.GROQ_API_KEY;
+  }
+});
 
 class MemoryMockProvider implements ChatProvider {
   private step = 0;
