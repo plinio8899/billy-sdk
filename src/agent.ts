@@ -121,9 +121,7 @@ export class Billy<T = unknown> {
     for (const [key, value] of Object.entries(variables)) {
       const placeholder = `{{${key}}}`;
       const serialized =
-        typeof value === "object"
-          ? JSON.stringify(value, null, 2)
-          : String(value);
+        typeof value === "object" ? JSON.stringify(value) : String(value);
       result = result.replaceAll(placeholder, serialized);
     }
     return result;
