@@ -26,7 +26,7 @@ class MemoryMockProvider implements ChatProvider {
       this.step === 1
         ? "¡Hola! ¿Cómo estás?"
         : "Me alegra. ¿En qué más puedo ayudarte?";
-    return { content, raw: content };
+    return { content };
   }
   async *chatStream(): AsyncIterable<string> {
     yield "mock";

@@ -15,7 +15,6 @@ export interface BillyConfig {
 
 export interface BillyResponse {
   content: string;
-  raw: string;
   error?: string;
 }
 

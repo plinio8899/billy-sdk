@@ -182,7 +182,7 @@ export class Billy<T = unknown> {
     }
 
     this._error = undefined;
-    this._raw = response.raw;
+    this._raw = response.content;
 
     if (schema) {
       const result = await this.resolveWithSchema(
@@ -193,7 +193,7 @@ export class Billy<T = unknown> {
 
       if (this._memoryMax > 0) {
         this.addToMemory("user", resolvedPrompt);
-        this.addToMemory("assistant", response.raw);
+        this.addToMemory("assistant", response.content);
       }
 
       return result;
@@ -204,7 +204,7 @@ export class Billy<T = unknown> {
 
     if (this._memoryMax > 0) {
       this.addToMemory("user", resolvedPrompt);
-      this.addToMemory("assistant", response.raw);
+      this.addToMemory("assistant", response.content);
     }
 
     return this._results;
@@ -241,7 +241,7 @@ export class Billy<T = unknown> {
       throw new Error(response.error);
     }
 
-    this._raw = response.raw;
+    this._raw = response.content;
     return this.resolveWithSchema(
       response.content,
       schema,

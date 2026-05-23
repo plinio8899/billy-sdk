@@ -68,7 +68,6 @@ export class GroqProvider implements ChatProvider {
 
         return {
           content: content.trim(),
-          raw: content.trim(),
         };
       } catch (error: unknown) {
         lastError = error as Error;
@@ -81,7 +80,6 @@ export class GroqProvider implements ChatProvider {
 
     return {
       content: "",
-      raw: "",
       error: lastError?.message || "Unknown error",
     };
   }
