@@ -98,7 +98,8 @@ export class Billy<T = unknown> {
   } {
     if (!input) return { vars: undefined, options: undefined };
 
-    if (input && "as" in input) {
+    const keys = Object.keys(input);
+    if (keys.length > 0 && keys.every((k) => k === "as" || k === "length")) {
       return { vars: undefined, options: input as BillyOptions };
     }
 
