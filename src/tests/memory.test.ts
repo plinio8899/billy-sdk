@@ -1,9 +1,8 @@
-// biome-ignore lint/suspicious/noExplicitAny: test access to private members
 import assert from "node:assert/strict";
 import { after, before, describe, it } from "node:test";
-import type { BillyConfig, BillyResponse } from "../types.js";
-import type { ChatProvider } from "../providers/types.js";
 import { Billy } from "../agent.js";
+import type { ChatProvider } from "../providers/types.js";
+import type { BillyConfig, BillyResponse } from "../types.js";
 
 const ORIGINAL_KEY = process.env.GROQ_API_KEY;
 
@@ -21,20 +20,24 @@ after(() => {
 
 class MemoryMockProvider implements ChatProvider {
   private step = 0;
-  constructor(_config: BillyConfig) {}
   async chat(_prompt: string): Promise<BillyResponse> {
     this.step++;
-    const content = this.step === 1
-      ? "¡Hola! ¿Cómo estás?"
-      : "Me alegra. ¿En qué más puedo ayudarte?";
+    const content =
+      this.step === 1
+        ? "¡Hola! ¿Cómo estás?"
+        : "Me alegra. ¿En qué más puedo ayudarte?";
     return { content, raw: content };
   }
-  async *chatStream(): AsyncIterable<string> { yield "mock"; }
+  async *chatStream(): AsyncIterable<string> {
+    yield "mock";
+  }
 }
 
+// biome-ignore lint/suspicious/noExplicitAny: test access to private members
 function makeIA(config: BillyConfig = {}): any {
+  // biome-ignore lint/suspicious/noExplicitAny: test access to private members
   const IA = new Billy(config) as any;
-  IA.client.provider = new MemoryMockProvider({});
+  IA.client.provider = new MemoryMockProvider();
   return IA;
 }
 

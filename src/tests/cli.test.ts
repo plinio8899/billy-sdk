@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { existsSync, mkdirSync, rmSync } from "node:fs";
+import { existsSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, it } from "node:test";
@@ -10,7 +10,7 @@ import {
   saveApiKey,
 } from "../config.js";
 
-const tmpHome = join(tmpdir(), "billy-test-" + Date.now());
+const tmpHome = join(tmpdir(), `billy-test-${Date.now()}`);
 
 afterEach(() => {
   const configDir = join(tmpHome, ".billy-sdk");

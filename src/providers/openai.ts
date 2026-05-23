@@ -46,10 +46,7 @@ export class OpenAIProvider implements ChatProvider {
     }
   }
 
-  async chat(
-    prompt: string,
-    systemPrompt?: string,
-  ): Promise<BillyResponse> {
+  async chat(prompt: string, systemPrompt?: string): Promise<BillyResponse> {
     let lastError: Error | undefined;
 
     const messages: Message[] = [];

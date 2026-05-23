@@ -9,8 +9,8 @@ import {
 } from "./config.js";
 
 export function maskKey(key: string): string {
-  if (key.length <= 8) return key.slice(0, 4) + "****";
-  return key.slice(0, 4) + "****" + key.slice(-4);
+  if (key.length <= 8) return `${key.slice(0, 4)}****`;
+  return `${key.slice(0, 4)}****${key.slice(-4)}`;
 }
 
 const args = process.argv.slice(2);
@@ -55,9 +55,7 @@ if (command === "config") {
     );
   }
 } else if (command === "init") {
-  console.log(
-    "Initialize billy-sdk in your project: npm install billy-sdk",
-  );
+  console.log("Initialize billy-sdk in your project: npm install billy-sdk");
 } else {
   console.log("billy-sdk - Simple AI for your projects");
   console.log("");

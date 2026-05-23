@@ -35,10 +35,7 @@ export class GroqProvider implements ChatProvider {
     this.client = new Groq({ apiKey });
   }
 
-  async chat(
-    prompt: string,
-    systemPrompt?: string,
-  ): Promise<BillyResponse> {
+  async chat(prompt: string, systemPrompt?: string): Promise<BillyResponse> {
     let lastError: Error | undefined;
 
     const messages: Message[] = [];

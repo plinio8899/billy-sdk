@@ -1,8 +1,8 @@
-import type { SchemaDef } from "../types.js";
 import assert from "node:assert/strict";
 import { after, before, describe, it } from "node:test";
-import { schemaToPrompt, validateSchema } from "../schema.js";
 import { Billy, SchemaValidationError } from "../agent.js";
+import { schemaToPrompt, validateSchema } from "../schema.js";
+import type { SchemaDef } from "../types.js";
 
 const ORIGINAL_KEY = process.env.GROQ_API_KEY;
 

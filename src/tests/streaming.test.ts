@@ -25,6 +25,7 @@ describe("Billy.stream", () => {
             if (i < chunks.length) {
               return Promise.resolve({ done: false, value: chunks[i++] });
             }
+            // biome-ignore lint/suspicious/noExplicitAny: required for AsyncIterator contract
             return Promise.resolve({ done: true, value: undefined as any });
           },
         };

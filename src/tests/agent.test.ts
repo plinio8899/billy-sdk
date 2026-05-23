@@ -89,10 +89,7 @@ describe("Billy", () => {
 
   it("acepta systemPrompt en la configuración inicial", () => {
     const agent = new Billy({ systemPrompt: "eres un experto" });
-    assert.equal(
-      Reflect.get(agent, "_systemPrompt"),
-      undefined,
-    );
+    assert.equal(Reflect.get(agent, "_systemPrompt"), undefined);
   });
 
   it("schema() setea el schema internamente", () => {

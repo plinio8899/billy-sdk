@@ -45,10 +45,7 @@ export class AnthropicProvider implements ChatProvider {
     }
   }
 
-  async chat(
-    prompt: string,
-    systemPrompt?: string,
-  ): Promise<BillyResponse> {
+  async chat(prompt: string, systemPrompt?: string): Promise<BillyResponse> {
     let lastError: Error | undefined;
 
     for (let attempt = 1; attempt <= this.retries; attempt++) {

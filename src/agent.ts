@@ -57,7 +57,9 @@ export class Billy<T = unknown> {
     varsOrOptions?: Variables | BillyOptions,
   ): Promise<InferReturn<T>> {
     const { vars, options } = this.parseArgs(varsOrOptions);
-    return this.run("validate", prompt, vars, options) as Promise<InferReturn<T>>;
+    return this.run("validate", prompt, vars, options) as Promise<
+      InferReturn<T>
+    >;
   }
 
   async analyze(
@@ -65,7 +67,9 @@ export class Billy<T = unknown> {
     varsOrOptions?: Variables | BillyOptions,
   ): Promise<InferReturn<T>> {
     const { vars, options } = this.parseArgs(varsOrOptions);
-    return this.run("analyze", prompt, vars, options) as Promise<InferReturn<T>>;
+    return this.run("analyze", prompt, vars, options) as Promise<
+      InferReturn<T>
+    >;
   }
 
   async extract(
@@ -73,7 +77,9 @@ export class Billy<T = unknown> {
     varsOrOptions?: Variables | BillyOptions,
   ): Promise<InferReturn<T>> {
     const { vars, options } = this.parseArgs(varsOrOptions);
-    return this.run("extract", prompt, vars, options) as Promise<InferReturn<T>>;
+    return this.run("extract", prompt, vars, options) as Promise<
+      InferReturn<T>
+    >;
   }
 
   async execute(
@@ -81,7 +87,9 @@ export class Billy<T = unknown> {
     varsOrOptions?: Variables | BillyOptions,
   ): Promise<InferReturn<T>> {
     const { vars, options } = this.parseArgs(varsOrOptions);
-    return this.run("execute", prompt, vars, options) as Promise<InferReturn<T>>;
+    return this.run("execute", prompt, vars, options) as Promise<
+      InferReturn<T>
+    >;
   }
 
   private parseArgs(input?: Variables | BillyOptions): {
@@ -128,8 +136,7 @@ export class Billy<T = unknown> {
     const history = this._memory
       .slice(-this._memoryMax * 2)
       .map(
-        (m) =>
-          `${m.role === "user" ? "Usuario" : "Asistente"}: ${m.content}`,
+        (m) => `${m.role === "user" ? "Usuario" : "Asistente"}: ${m.content}`,
       )
       .join("\n");
 
@@ -236,7 +243,12 @@ export class Billy<T = unknown> {
     }
 
     this._raw = response.raw;
-    return this.resolveWithSchema(response.content, schema, originalPrompt, attempt + 1);
+    return this.resolveWithSchema(
+      response.content,
+      schema,
+      originalPrompt,
+      attempt + 1,
+    );
   }
 
   private buildPrompt(
@@ -353,7 +365,12 @@ export class Billy<T = unknown> {
     const resolvedPrompt = this.resolveVariables(prompt, vars);
     const memoryPrompt = this.buildMemoryPrompt(resolvedPrompt);
 
-    const fullPrompt = this.buildPrompt("create", memoryPrompt, returnType, length);
+    const fullPrompt = this.buildPrompt(
+      "create",
+      memoryPrompt,
+      returnType,
+      length,
+    );
 
     const providerStream = this.client.chatStream(
       fullPrompt,
@@ -381,6 +398,7 @@ export class Billy<T = unknown> {
             );
           } catch (err) {
             this._error = (err as Error).message;
+            // biome-ignore lint/correctness/noUnsafeFinally: intentional - propagate schema errors after stream completion
             throw err;
           }
         } else {
@@ -420,7 +438,10 @@ export class Billy<T = unknown> {
       return Promise.reject(new Error(this._error));
     }
     if (this._results !== undefined) {
-      return Promise.resolve(this._results as InferReturn<T>).then(onfulfilled, onrejected);
+      return Promise.resolve(this._results as InferReturn<T>).then(
+        onfulfilled,
+        onrejected,
+      );
     }
     return Promise.reject(new Error("No result yet"));
   }
