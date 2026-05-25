@@ -19,9 +19,7 @@ for (const ticket of tickets) {
       sentimiento: "string",
       respuesta_sugerida: "string",
     })
-    .validate('Clasifica este ticket de soporte:\n\n{{ticket}}', {
-      ticket,
-    });
+    .validate(`Clasifica este ticket de soporte:\n\n${ticket}`);
 
   console.log(`Ticket: ${ticket.slice(0, 50)}...`);
   console.log(`  → ${clasificacion.categoria} | ${clasificacion.urgencia} | ${clasificacion.sentimiento}`);

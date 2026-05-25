@@ -10,7 +10,7 @@ Tipos de respuesta: string, number, boolean, array, object, json.
 Chaining: .asNumber().short().create("prompt").
 Config: billy({ provider: "openai", model: "gpt-4o", temperature: 0.7 }).
 CLI: npx billy-sdk config set <api-key>.
-Variable injection: {{placeholder}} en prompts.
+Variable injection: template literals en prompts.
 Schemas validados con .schema().
 `;
 
@@ -22,8 +22,7 @@ const preguntas = [
 
 for (const pregunta of preguntas) {
   const respuesta = await IA.create(
-    `Usando SOLO la siguiente documentación, responde:\n\n---\n{{docs}}\n---\n\nPregunta: {{pregunta}}\n\nSi la documentación no contiene la respuesta, di "No tengo esa información en mi contexto."`,
-    { docs: documentacion, pregunta }
+    `Usando SOLO la siguiente documentación, responde:\n\n---\n${documentacion}\n---\n\nPregunta: ${pregunta}\n\nSi la documentación no contiene la respuesta, di "No tengo esa información en mi contexto."`,
   );
 
   console.log(`Q: ${pregunta}`);

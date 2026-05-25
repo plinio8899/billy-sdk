@@ -11,7 +11,6 @@ import type {
   ReturnType,
   SchemaDef,
   TaskFunction,
-  Variables,
 } from "./types.js";
 
 type MemoryMessage = { role: "user" | "assistant"; content: string };
@@ -38,80 +37,44 @@ export class Billy<T = unknown> {
 
   async create(
     prompt: string,
-    varsOrOptions?: Variables | BillyOptions,
+    options?: BillyOptions,
   ): Promise<InferReturn<T>> {
-    const { vars, options } = this.parseArgs(varsOrOptions);
-    return this.run("create", prompt, vars, options) as Promise<InferReturn<T>>;
+    return this.run("create", prompt, options) as Promise<InferReturn<T>>;
   }
 
   async modify(
     prompt: string,
-    varsOrOptions?: Variables | BillyOptions,
+    options?: BillyOptions,
   ): Promise<InferReturn<T>> {
-    const { vars, options } = this.parseArgs(varsOrOptions);
-    return this.run("modify", prompt, vars, options) as Promise<InferReturn<T>>;
+    return this.run("modify", prompt, options) as Promise<InferReturn<T>>;
   }
 
   async validate(
     prompt: string,
-    varsOrOptions?: Variables | BillyOptions,
+    options?: BillyOptions,
   ): Promise<InferReturn<T>> {
-    const { vars, options } = this.parseArgs(varsOrOptions);
-    return this.run("validate", prompt, vars, options) as Promise<
-      InferReturn<T>
-    >;
+    return this.run("validate", prompt, options) as Promise<InferReturn<T>>;
   }
 
   async analyze(
     prompt: string,
-    varsOrOptions?: Variables | BillyOptions,
+    options?: BillyOptions,
   ): Promise<InferReturn<T>> {
-    const { vars, options } = this.parseArgs(varsOrOptions);
-    return this.run("analyze", prompt, vars, options) as Promise<
-      InferReturn<T>
-    >;
+    return this.run("analyze", prompt, options) as Promise<InferReturn<T>>;
   }
 
   async extract(
     prompt: string,
-    varsOrOptions?: Variables | BillyOptions,
+    options?: BillyOptions,
   ): Promise<InferReturn<T>> {
-    const { vars, options } = this.parseArgs(varsOrOptions);
-    return this.run("extract", prompt, vars, options) as Promise<
-      InferReturn<T>
-    >;
+    return this.run("extract", prompt, options) as Promise<InferReturn<T>>;
   }
 
   async execute(
     prompt: string,
-    varsOrOptions?: Variables | BillyOptions,
+    options?: BillyOptions,
   ): Promise<InferReturn<T>> {
-    const { vars, options } = this.parseArgs(varsOrOptions);
-    return this.run("execute", prompt, vars, options) as Promise<
-      InferReturn<T>
-    >;
-  }
-
-  private parseArgs(input?: Variables | BillyOptions): {
-    vars: Variables | undefined;
-    options: BillyOptions | undefined;
-  } {
-    if (!input) return { vars: undefined, options: undefined };
-
-    const optionKeys = new Set([
-      "as",
-      "length",
-      "type",
-      "temperature",
-      "maxTokens",
-      "signal",
-    ]);
-    const keys = Object.keys(input);
-    if (keys.length > 0 && keys.every((k) => optionKeys.has(k))) {
-      return { vars: undefined, options: input as BillyOptions };
-    }
-
-    return { vars: input as Variables, options: undefined };
+    return this.run("execute", prompt, options) as Promise<InferReturn<T>>;
   }
 
   private checkMemoryTtl(): void {
@@ -123,18 +86,6 @@ export class Billy<T = unknown> {
       this._memory = [];
       this._memoryTimestamp = 0;
     }
-  }
-
-  private resolveVariables(prompt: string, variables?: Variables): string {
-    if (!variables || Object.keys(variables).length === 0) return prompt;
-    let result = prompt;
-    for (const [key, value] of Object.entries(variables)) {
-      const placeholder = `{{${key}}}`;
-      const serialized =
-        typeof value === "object" ? JSON.stringify(value) : String(value);
-      result = result.replaceAll(placeholder, serialized);
-    }
-    return result;
   }
 
   private buildMemoryPrompt(currentPrompt: string): string {
@@ -167,16 +118,23 @@ export class Billy<T = unknown> {
   private async run(
     type: TaskFunction,
     prompt: string,
-    variables?: Variables,
     options?: BillyOptions,
   ): Promise<unknown> {
-    const returnType = options?.as || this._returnType;
-    const length = options?.length || this._length;
+    const returnType = this._returnType;
+    const length = this._length;
     this._returnType = undefined;
     this._length = undefined;
     const schema = this._schema;
-    const resolvedPrompt = this.resolveVariables(prompt, variables);
-    const memoryPrompt = this.buildMemoryPrompt(resolvedPrompt);
+
+    if (type === "modify" && this._results !== undefined) {
+      const serialized =
+        typeof this._results === "object"
+          ? JSON.stringify(this._results, null, 2)
+          : String(this._results);
+      prompt = `${serialized}\n\n---\n\n${prompt}`;
+    }
+
+    const memoryPrompt = this.buildMemoryPrompt(prompt);
 
     const fullPrompt = this.buildPrompt(type, memoryPrompt, returnType, length);
 
@@ -204,7 +162,7 @@ export class Billy<T = unknown> {
       );
 
       if (this._memoryMax > 0) {
-        this.addToMemory("user", resolvedPrompt);
+        this.addToMemory("user", prompt);
         this.addToMemory("assistant", response.content);
       }
 
@@ -215,7 +173,7 @@ export class Billy<T = unknown> {
     this._results = returnType ? parseAs(returnType, response.content) : parsed;
 
     if (this._memoryMax > 0) {
-      this.addToMemory("user", resolvedPrompt);
+      this.addToMemory("user", prompt);
       this.addToMemory("assistant", response.content);
     }
 
@@ -364,19 +322,23 @@ export class Billy<T = unknown> {
     return this;
   }
 
-  async *stream(
-    prompt: string,
-    varsOrOptions?: Variables | BillyOptions,
-  ): BillyStream {
-    const { vars, options } = this.parseArgs(varsOrOptions);
-    const returnType = options?.as || this._returnType;
-    const length = options?.length || this._length;
+  async *stream(prompt: string, options?: BillyOptions): BillyStream {
+    const returnType = this._returnType;
+    const length = this._length;
     const type = options?.type || "create";
     this._returnType = undefined;
     this._length = undefined;
     const schema = this._schema;
-    const resolvedPrompt = this.resolveVariables(prompt, vars);
-    const memoryPrompt = this.buildMemoryPrompt(resolvedPrompt);
+
+    if (type === "modify" && this._results !== undefined) {
+      const serialized =
+        typeof this._results === "object"
+          ? JSON.stringify(this._results, null, 2)
+          : String(this._results);
+      prompt = `${serialized}\n\n---\n\n${prompt}`;
+    }
+
+    const memoryPrompt = this.buildMemoryPrompt(prompt);
 
     const fullPrompt = this.buildPrompt(type, memoryPrompt, returnType, length);
 
@@ -418,7 +380,7 @@ export class Billy<T = unknown> {
         }
 
         if (this._memoryMax > 0) {
-          this.addToMemory("user", resolvedPrompt);
+          this.addToMemory("user", prompt);
           this.addToMemory("assistant", fullContent);
         }
       }

@@ -20,8 +20,6 @@ export interface BillyResponse {
   error?: string;
 }
 
-export type Variables = Record<string, unknown>;
-
 export type TaskFunction =
   | "create"
   | "modify"
@@ -48,8 +46,6 @@ export type SchemaDef =
   | [SchemaDef];
 
 export interface BillyOptions {
-  as?: ReturnType;
-  length?: ResponseLength;
   type?: TaskFunction;
   temperature?: number;
   maxTokens?: number;

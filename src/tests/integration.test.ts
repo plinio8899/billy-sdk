@@ -154,52 +154,6 @@ describe("Integration — return type coercion", () => {
   });
 });
 
-describe("Integration — return type via BillyOptions", () => {
-  it("{ as: 'number' } en segunda posición", async () => {
-    const { ia } = makeIA("99");
-    const result = await ia.create("test", { as: "number" });
-    assert.equal(result, 99);
-  });
-
-  it("{ as: 'boolean' } en segunda posición", async () => {
-    const { ia } = makeIA("true");
-    const result = await ia.create("test", { as: "boolean" });
-    assert.equal(result, true);
-  });
-
-  it("{ as: 'array' } en segunda posición", async () => {
-    const { ia } = makeIA('["x", "y"]');
-    const result = await ia.create("test", { as: "array" });
-    assert.deepEqual(result, ["x", "y"]);
-  });
-});
-
-describe("Integration — variable resolution", () => {
-  it("reemplaza {{variable}} en el prompt", async () => {
-    const { ia } = makeIA("resultado");
-    const result = await ia.create("Hola {{nombre}}", { nombre: "Mundo" });
-    assert.equal(result, "resultado");
-  });
-
-  it("serializa objetos como JSON", async () => {
-    const { ia } = makeIA("ok");
-    const result = await ia.create("procesa {{data}}", { data: { x: 1 } });
-    assert.equal(result, "ok");
-  });
-
-  it("variables vacías no alteran el prompt", async () => {
-    const { ia } = makeIA("resultado");
-    const result = await ia.create("test", {});
-    assert.equal(result, "resultado");
-  });
-
-  it("sin variables funciona igual", async () => {
-    const { ia } = makeIA("resultado");
-    const result = await ia.create("test");
-    assert.equal(result, "resultado");
-  });
-});
-
 describe("Integration — schema validation", () => {
   it("schema válido retorna objeto parseado", async () => {
     const { ia } = makeIA('{"name": "Ana", "age": 30}');
@@ -357,37 +311,23 @@ describe("Integration — edge cases", () => {
     assert.equal(result, "respuesta");
   });
 
-  it("parseArgs identifica Options correctamente", async () => {
-    const { ia } = makeIA("42");
-    const result = await ia.create("test", { as: "number", length: "short" });
-    assert.equal(result, 42);
-  });
-
-  it("parseArgs trata cualquier key de option como Options", async () => {
-    const { ia } = makeIA("texto");
-    const result = await ia.create("test", { as: "not-a-valid-type" });
-    assert.equal(result, "texto");
-  });
-
-  it("parseArgs detecta temperature como key de option", async () => {
+  it("options temperature se pasa al provider", async () => {
     const { ia } = makeIA("42");
     const result = await ia.create("test", { temperature: 0.2 });
     assert.equal(result, 42);
   });
 
-  it("parseArgs detecta maxTokens como key de option", async () => {
+  it("options maxTokens se pasa al provider", async () => {
     const { ia } = makeIA("42");
     const result = await ia.create("test", { maxTokens: 200 });
     assert.equal(result, 42);
   });
 
-  it("parseArgs keys mixtas se tratan como Variables", async () => {
-    const { ia } = makeIA("texto con variable y 123");
-    const result = await ia.create("texto con {{as}} y {{extra}}", {
-      as: "variable",
-      extra: 123,
-    });
-    assert.equal(result, "texto con variable y 123");
+  it("modify usa .results como contexto", async () => {
+    const { ia } = makeIA("texto modificado con contexto");
+    await ia.create("contenido original");
+    const result = await ia.modify("hazlo más poético");
+    assert.equal(result, "texto modificado con contexto");
   });
 });
 

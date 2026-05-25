@@ -30,8 +30,7 @@ for (const { tipo, contexto, tono } of emails) {
 El tono debe ser: ${tono}.`);
 
   const email = await IA.create(
-    'Redacta un email de {{tipo}} sobre: {{contexto}}.\n\nIncluye asunto y cuerpo.',
-    { tipo, contexto }
+    `Redacta un email de ${tipo} sobre: ${contexto}.\n\nIncluye asunto y cuerpo.`,
   );
 
   console.log(`📧 ${tipo.toUpperCase()} (${tono})`);

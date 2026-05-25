@@ -32,8 +32,6 @@ const datos = await IA
     iva: "number",
     total: "number",
   })
-  .extract('Extrae los datos estructurados de esta factura:\n\n{{texto}}', {
-    texto: textoFactura,
-  });
+  .extract(`Extrae los datos estructurados de esta factura:\n\n${textoFactura}`);
 
 console.log('Factura extraída:', JSON.stringify(datos, null, 2));

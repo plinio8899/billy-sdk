@@ -37,9 +37,7 @@ const resumen = await IA
     resumen: "string",
     nivel_tecnico: "string",
   })
-  .extract('Resume este documento extrayendo la información más importante:\n\n{{texto}}', {
-    texto: textoDocumento.slice(0, 4000),
-  });
+  .extract(`Resume este documento extrayendo la información más importante:\n\n${textoDocumento.slice(0, 4000)}`);
 
 console.log('📄 Resumen del documento:');
 console.log(JSON.stringify(resumen, null, 2));

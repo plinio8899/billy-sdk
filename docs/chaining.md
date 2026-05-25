@@ -43,6 +43,20 @@ Each method returns the same instance, so you can chain indefinitely.
 | `.medium()` | Concise response |
 | `.long()` | Detailed response |
 
+### Memory
+
+| Method | Description |
+|--------|-------------|
+| `.withMemory(n, ttl?)` | Enable conversation history (chainable) |
+
+```javascript
+const IA = billy();
+IA.withMemory(5);
+
+await IA.create("Hola, me llamo Juan");
+await IA.create("¿Cómo me llamo?"); // sabe tu nombre
+```
+
 ### Terminal Operations
 
 Chain methods are consumed by calling one of these:
@@ -52,10 +66,10 @@ Chain methods are consumed by calling one of these:
 | `.create()` | `Promise<unknown>` — full response |
 | `.stream()` | `AsyncIterable<string>` — chunk by chunk |
 
-`.stream()` also accepts `{ type }` as second argument to set the task (defaults to `"create"`):
+`.stream()` also accepts `{ type, temperature, maxTokens, signal }` as second argument:
 
 ```javascript
-const stream = IA.stream("Extrae los datos", { type: "extract" });
+const stream = IA.stream("Extrae los datos", { type: "extract", temperature: 0.5 });
 ```
 
 ## Full Chain Example

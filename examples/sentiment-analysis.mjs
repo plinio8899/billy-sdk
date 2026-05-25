@@ -19,9 +19,7 @@ for (const texto of textos) {
       emociones: ["string"],
       resumen: "string",
     })
-    .analyze('Analiza el sentimiento de este texto:\n\n"{{texto}}"', {
-      texto,
-    });
+    .analyze(`Analiza el sentimiento de este texto:\n\n"${texto}"`);
 
   console.log(`Texto: "${texto}"`);
   console.log(`  Sentimiento: ${analisis.sentimiento} | Puntuación: ${analisis.puntuacion}/10 | Positivo: ${analisis.positivo}`);

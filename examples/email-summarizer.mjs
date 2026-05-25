@@ -27,9 +27,7 @@ const resumen = await IA
     urgencia: "string",
   })
   .short()
-  .extract('Resume este email extrayendo la información clave:\n\n{{email}}', {
-    email: emailLargo,
-  });
+  .extract(`Resume este email extrayendo la información clave:\n\n${emailLargo}`);
 
 console.log('📬 Resumen de email:');
 console.log(JSON.stringify(resumen, null, 2));

@@ -19,9 +19,7 @@ for (const comentario of comentarios) {
       razon: "string",
       accion: "string",
     })
-    .validate('Modera este comentario según las políticas de la comunidad:\n\n"{{comentario}}"', {
-      comentario,
-    });
+    .validate(`Modera este comentario según las políticas de la comunidad:\n\n"${comentario}"`);
 
   const icono = moderacion.es_aceptable ? '✅' : '❌';
   console.log(`${icono} "${comentario}"`);

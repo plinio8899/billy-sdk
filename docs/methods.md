@@ -1,60 +1,58 @@
 # Methods
 
-All methods return `Promise<unknown>` and store the result in `.results`.
+All methods accept `prompt` as the first argument and optional `BillyOptions` as the second.
+They return `Promise<unknown>` and store the result in `.results`.
 
-## .create(prompt, variables?)
+## .create(prompt, options?)
 
 Generate new content.
 
 ```javascript
 await IA.create("Escribe un poema sobre el mar");
-await IA.create("Genera 5 preguntas sobre {{tema}}", { tema: "historia" });
+await IA.create("Dame 5 preguntas", { temperature: 0.8 });
 ```
 
-## .modify(prompt, variables?)
+## .modify(prompt, options?)
 
-Transform existing content.
+Transform the **previous result** according to new instructions.
 
 ```javascript
 await IA.create("Una casa en el campo");
 await IA.modify("Convierte eso en un texto más poético");
-// Uses previous .results as context
+// Automatically prepends the previous .results as context
 ```
 
-## .validate(prompt, variables?)
+## .validate(prompt, options?)
 
 Verify or answer questions.
 
 ```javascript
 const isValid = await IA.asBoolean().validate(
-  "¿Este email contiene phishing? {{email}}",
-  { email: "win@prize.com" }
+  "¿Este email contiene phishing?"
 );
 ```
 
-## .analyze(prompt, variables?)
+## .analyze(prompt, options?)
 
 Analyze data and provide insights.
 
 ```javascript
 const analysis = await IA.analyze(
-  "Dame un resumen de estas métricas: {{datos}}",
-  { datos: { users: 1500, revenue: 45000, churn: 0.05 } }
+  "Dame un resumen de estas métricas: ..."
 );
 ```
 
-## .extract(prompt, variables?)
+## .extract(prompt, options?)
 
 Extract specific information from text.
 
 ```javascript
 const info = await IA.asObject().extract(
-  "Extrae: nombre, email, teléfono del texto: {{texto}}",
-  { texto: "Juan Pérez, juan@mail.com, +52 555 123 4567" }
+  "Extrae: nombre, email, teléfono del texto: ..."
 );
 ```
 
-## .execute(prompt, variables?)
+## .execute(prompt, options?)
 
 Execute a calculation and return the result.
 
@@ -110,7 +108,7 @@ const result = await IA
 
 If the LLM returns something that doesn't match the schema, billy-sdk automatically retries with the validation errors as feedback.
 
-## .stream(prompt, variablesOrOptions?)
+## .stream(prompt, options?)
 
 Stream the response chunk by chunk in real time. Returns an `AsyncIterable<string>`.
 
@@ -124,7 +122,7 @@ for await (const chunk of stream) {
 console.log(IA.results); // resultado completo al finalizar
 ```
 
-Accepts the same `{ as, length, type }` options as other methods:
+Accepts `{ type, temperature, maxTokens, signal }` options:
 
 ```javascript
 // Stream with a different task type
@@ -145,6 +143,30 @@ console.log(IA.results); // objeto validado
 > **Note:** Schema validation runs after all chunks arrive, not per-chunk.
 
 📄 `examples/streaming.mjs`
+
+## Options (second argument)
+
+All task methods and `.stream()` accept an optional `BillyOptions` object:
+
+| Option | Type | Description |
+|--------|------|-------------|
+| `type` | `"create" \| "modify" \| "validate" \| "analyze" \| "extract" \| "execute"` | Override task type (defaults to method name) |
+| `temperature` | `number` | Per-request temperature override |
+| `maxTokens` | `number` | Per-request max tokens override |
+| `signal` | `AbortSignal` | Abort signal for cancellation |
+
+```javascript
+await IA.create("prompt", { temperature: 0.9, maxTokens: 200 });
+
+const ac = new AbortController();
+const stream = IA.stream("long text", { signal: ac.signal });
+// later: ac.abort()
+```
+
+For type/length coercion, use chaining instead:
+```javascript
+await IA.asNumber().short().create("5 * 3");   // ✓
+```
 
 ## .system(prompt)
 
@@ -194,6 +216,7 @@ const IA = billy({ memory: 10, memoryTtl: 60000 }); // expira después de 60s
 
 | Method | Description |
 |--------|-------------|
+| `IA.withMemory(n, ttl?)` | Enable memory mid-flight (chainable) |
 | `IA.clearMemory()` | Reset conversation history |
 | `IA.memory` | Get current history (read-only array) |
 
