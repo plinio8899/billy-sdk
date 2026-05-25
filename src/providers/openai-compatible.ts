@@ -1,6 +1,6 @@
-import { BaseProvider } from "./base.js";
-
-type Message = { role: "system" | "user"; content: string };
+import { extractPdfText, mimeType, readAsBase64 } from "../file-utils.js";
+import type { FileContent } from "../types.js";
+import { BaseProvider, type Message } from "./base.js";
 
 interface CompletionChunk {
   choices: { delta?: { content?: string } }[];
@@ -24,10 +24,43 @@ export interface Client {
 export abstract class OpenAICompatibleProvider extends BaseProvider {
   protected abstract client: Client;
 
-  protected buildMessages(prompt: string, systemPrompt?: string): Message[] {
+  protected async buildMessages(
+    prompt: string,
+    systemPrompt?: string,
+    files?: FileContent[],
+  ): Promise<Message[]> {
     const messages: Message[] = [];
     if (systemPrompt) messages.push({ role: "system", content: systemPrompt });
-    messages.push({ role: "user", content: prompt });
+
+    if (files && files.length > 0) {
+      const parts: Record<string, unknown>[] = [];
+      for (const file of files) {
+        if (file.type === "image") {
+          const b64 = await readAsBase64(file.path);
+          parts.push({
+            type: "image_url",
+            image_url: {
+              url: `data:${mimeType(file.path)};base64,${b64}`,
+            },
+          });
+        } else if (file.type === "image-url") {
+          parts.push({
+            type: "image_url",
+            image_url: { url: file.url, detail: file.detail ?? "auto" },
+          });
+        } else if (file.type === "pdf") {
+          const text = await extractPdfText(file.path);
+          parts.push({ type: "text", text });
+        } else if (file.type === "text") {
+          parts.push({ type: "text", text: file.content });
+        }
+      }
+      parts.push({ type: "text", text: prompt });
+      messages.push({ role: "user", content: parts });
+    } else {
+      messages.push({ role: "user", content: prompt });
+    }
+
     return messages;
   }
 

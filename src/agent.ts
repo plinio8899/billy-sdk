@@ -6,6 +6,7 @@ import type {
   BillyOptions,
   BillyResponse,
   BillyStream,
+  FileContent,
   InferReturn,
   ResponseLength,
   ReturnType,
@@ -28,6 +29,7 @@ export class Billy<T = unknown> {
   private _memoryMax: number = 0;
   private _memoryTtl: number = 0;
   private _memoryTimestamp: number = 0;
+  private _files: FileContent[] = [];
 
   constructor(config: BillyConfig = {}) {
     this.client = new LlmClient(config);
@@ -125,6 +127,10 @@ export class Billy<T = unknown> {
     this._returnType = undefined;
     this._length = undefined;
     const schema = this._schema;
+    const files = [...this._files, ...(options?.files || [])];
+    this._files = [];
+    const mergedOptions: BillyOptions | undefined =
+      files.length > 0 ? { ...options, files } : options;
 
     if (type === "modify" && this._results !== undefined) {
       const serialized =
@@ -141,7 +147,7 @@ export class Billy<T = unknown> {
     const response: BillyResponse = await this.client.chat(
       fullPrompt,
       this._systemPrompt,
-      options,
+      mergedOptions,
     );
 
     if (response.error) {
@@ -317,6 +323,46 @@ export class Billy<T = unknown> {
     return this;
   }
 
+  withFile(file: FileContent | string): Billy<T> {
+    if (typeof file === "string") {
+      const ext = file.toLowerCase().split(".").pop();
+      if (ext === "pdf") {
+        this._files.push({ type: "pdf", path: file });
+      } else if (
+        ext === "jpg" ||
+        ext === "jpeg" ||
+        ext === "png" ||
+        ext === "gif" ||
+        ext === "webp"
+      ) {
+        this._files.push({ type: "image", path: file });
+      } else {
+        this._files.push({ type: "text", content: file });
+      }
+    } else {
+      this._files.push(file);
+    }
+    return this;
+  }
+
+  withImage(path: string): Billy<T> {
+    return this.withFile({ type: "image", path });
+  }
+
+  withImageUrl(url: string, detail?: "auto" | "low" | "high"): Billy<T> {
+    return this.withFile(
+      detail ? { type: "image-url", url, detail } : { type: "image-url", url },
+    );
+  }
+
+  withPdf(path: string): Billy<T> {
+    return this.withFile({ type: "pdf", path });
+  }
+
+  withText(content: string): Billy<T> {
+    return this.withFile({ type: "text", content });
+  }
+
   schema(def: SchemaDef): Billy<T> {
     this._schema = def;
     return this;
@@ -329,6 +375,10 @@ export class Billy<T = unknown> {
     this._returnType = undefined;
     this._length = undefined;
     const schema = this._schema;
+    const files = [...this._files, ...(options?.files || [])];
+    this._files = [];
+    const mergedOptions: BillyOptions | undefined =
+      files.length > 0 ? { ...options, files } : options;
 
     if (type === "modify" && this._results !== undefined) {
       const serialized =
@@ -345,7 +395,7 @@ export class Billy<T = unknown> {
     const providerStream = this.client.chatStream(
       fullPrompt,
       this._systemPrompt,
-      options,
+      mergedOptions,
     );
 
     let fullContent = "";

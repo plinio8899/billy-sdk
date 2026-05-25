@@ -59,11 +59,12 @@
     "access": "public"
   },
   "dependencies": {
-    "groq-sdk": "^0.8.0"
+    "groq-sdk": "^0.8.0",
+    "pdf-parse": "^2.4.5"
   },
   "peerDependencies": {
-    "openai": "^4.0.0",
-    "@anthropic-ai/sdk": "^0.30.0"
+    "@anthropic-ai/sdk": "^0.30.0",
+    "openai": "^4.0.0"
   },
   "peerDependenciesMeta": {
     "openai": {

@@ -1,11 +1,10 @@
 import { createRequire } from "node:module";
 import { resolveApiKey } from "../config.js";
-import type { BillyConfig } from "../types.js";
-import { BaseProvider } from "./base.js";
+import { mimeType, readAsBase64 } from "../file-utils.js";
+import type { BillyConfig, FileContent } from "../types.js";
+import { BaseProvider, type Message } from "./base.js";
 
 const require = createRequire(import.meta.url);
-
-type Message = { role: "user"; content: string };
 
 interface AnthropicChunk {
   type: string;
@@ -63,7 +62,44 @@ export class AnthropicProvider extends BaseProvider {
     return "claude-3-haiku-20240307";
   }
 
-  protected buildMessages(prompt: string, _systemPrompt?: string): Message[] {
+  protected async buildMessages(
+    prompt: string,
+    _systemPrompt?: string,
+    files?: FileContent[],
+  ): Promise<Message[]> {
+    if (files && files.length > 0) {
+      const blocks: Record<string, unknown>[] = [];
+      for (const file of files) {
+        if (file.type === "image") {
+          blocks.push({
+            type: "image",
+            source: {
+              type: "base64",
+              media_type: mimeType(file.path),
+              data: await readAsBase64(file.path),
+            },
+          });
+        } else if (file.type === "image-url") {
+          blocks.push({
+            type: "image",
+            source: { type: "url", url: file.url },
+          });
+        } else if (file.type === "pdf") {
+          blocks.push({
+            type: "document",
+            source: {
+              type: "base64",
+              media_type: "application/pdf",
+              data: await readAsBase64(file.path),
+            },
+          });
+        } else if (file.type === "text") {
+          blocks.push({ type: "text", text: file.content });
+        }
+      }
+      blocks.push({ type: "text", text: prompt });
+      return [{ role: "user", content: blocks }];
+    }
     return [{ role: "user", content: prompt }];
   }
 

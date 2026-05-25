@@ -352,3 +352,262 @@ describe("Integration — withMemory() chainer", () => {
     assert.equal(result, 42);
   });
 });
+
+describe("Billy file attachment", () => {
+  it("withFile con string detecta PDF por extension", () => {
+    const ia = new Billy({
+      providerInstance: new MockProvider(""),
+    }) as unknown as {
+      _files: { type: string; path: string }[];
+      withFile: (f: unknown) => void;
+    };
+    ia.withFile("./doc.pdf");
+    assert.deepEqual(ia._files, [{ type: "pdf", path: "./doc.pdf" }]);
+  });
+
+  it("withFile con string detecta imagen por extension", () => {
+    const ia = new Billy({
+      providerInstance: new MockProvider(""),
+    }) as unknown as {
+      _files: { type: string; path: string }[];
+      withFile: (f: unknown) => void;
+    };
+    ia.withFile("./photo.jpg");
+    assert.deepEqual(ia._files, [{ type: "image", path: "./photo.jpg" }]);
+  });
+
+  it("withFile con string detecta jpeg como imagen", () => {
+    const ia = new Billy({
+      providerInstance: new MockProvider(""),
+    }) as unknown as {
+      _files: { type: string; path: string }[];
+      withFile: (f: unknown) => void;
+    };
+    ia.withFile("./photo.jpeg");
+    assert.deepEqual(ia._files, [{ type: "image", path: "./photo.jpeg" }]);
+  });
+
+  it("withFile con string detecta png como imagen", () => {
+    const ia = new Billy({
+      providerInstance: new MockProvider(""),
+    }) as unknown as {
+      _files: { type: string; path: string }[];
+      withFile: (f: unknown) => void;
+    };
+    ia.withFile("./photo.png");
+    assert.deepEqual(ia._files, [{ type: "image", path: "./photo.png" }]);
+  });
+
+  it("withFile con string detecta gif como imagen", () => {
+    const ia = new Billy({
+      providerInstance: new MockProvider(""),
+    }) as unknown as {
+      _files: { type: string; path: string }[];
+      withFile: (f: unknown) => void;
+    };
+    ia.withFile("./photo.gif");
+    assert.deepEqual(ia._files, [{ type: "image", path: "./photo.gif" }]);
+  });
+
+  it("withFile con string detecta webp como imagen", () => {
+    const ia = new Billy({
+      providerInstance: new MockProvider(""),
+    }) as unknown as {
+      _files: { type: string; path: string }[];
+      withFile: (f: unknown) => void;
+    };
+    ia.withFile("./photo.webp");
+    assert.deepEqual(ia._files, [{ type: "image", path: "./photo.webp" }]);
+  });
+
+  it("withFile con string usa texto para extension desconocida", () => {
+    const ia = new Billy({
+      providerInstance: new MockProvider(""),
+    }) as unknown as {
+      _files: { type: string; content: string }[];
+      withFile: (f: unknown) => void;
+    };
+    ia.withFile("./data.csv");
+    assert.deepEqual(ia._files, [{ type: "text", content: "./data.csv" }]);
+  });
+
+  it("withFile con FileContent object lo agrega directo", () => {
+    const ia = new Billy({
+      providerInstance: new MockProvider(""),
+    }) as unknown as {
+      _files: unknown[];
+      withFile: (f: unknown) => void;
+    };
+    ia.withFile({ type: "image-url", url: "https://example.com/img.jpg" });
+    assert.deepEqual(ia._files, [
+      { type: "image-url", url: "https://example.com/img.jpg" },
+    ]);
+  });
+
+  it("withImage es shortcut para tipo image", () => {
+    const ia = new Billy({
+      providerInstance: new MockProvider(""),
+    }) as unknown as {
+      _files: { type: string; path: string }[];
+      withImage: (p: string) => void;
+    };
+    ia.withImage("./foto.jpg");
+    assert.deepEqual(ia._files, [{ type: "image", path: "./foto.jpg" }]);
+  });
+
+  it("withPdf es shortcut para tipo pdf", () => {
+    const ia = new Billy({
+      providerInstance: new MockProvider(""),
+    }) as unknown as {
+      _files: { type: string; path: string }[];
+      withPdf: (p: string) => void;
+    };
+    ia.withPdf("./doc.pdf");
+    assert.deepEqual(ia._files, [{ type: "pdf", path: "./doc.pdf" }]);
+  });
+
+  it("withImageUrl es shortcut para tipo image-url", () => {
+    const ia = new Billy({
+      providerInstance: new MockProvider(""),
+    }) as unknown as {
+      _files: { type: string; url: string }[];
+      withImageUrl: (u: string) => void;
+    };
+    ia.withImageUrl("https://example.com/img.jpg");
+    assert.deepEqual(ia._files, [
+      { type: "image-url", url: "https://example.com/img.jpg" },
+    ]);
+  });
+
+  it("withText es shortcut para tipo text", () => {
+    const ia = new Billy({
+      providerInstance: new MockProvider(""),
+    }) as unknown as {
+      _files: { type: string; content: string }[];
+      withText: (c: string) => void;
+    };
+    ia.withText("contenido directo");
+    assert.deepEqual(ia._files, [
+      { type: "text", content: "contenido directo" },
+    ]);
+  });
+
+  it("chained files se pasan como options.files en run()", async () => {
+    let capturedOptions: BillyOptions | undefined;
+    const capturingMock = new (class extends MockProvider {
+      async chat(
+        _prompt: string,
+        _systemPrompt?: string,
+        options?: BillyOptions,
+      ): Promise<BillyResponse> {
+        capturedOptions = options;
+        return { content: "ok" };
+      }
+    })("");
+    const ia = new Billy({ providerInstance: capturingMock });
+    ia.withImage("./foto.jpg");
+    await ia.create("test");
+    assert.ok(capturedOptions);
+    assert.deepEqual(capturedOptions?.files, [
+      { type: "image", path: "./foto.jpg" },
+    ]);
+  });
+
+  it("options.files directo funciona sin chaining", async () => {
+    let capturedOptions: BillyOptions | undefined;
+    const capturingMock = new (class extends MockProvider {
+      async chat(
+        _prompt: string,
+        _systemPrompt?: string,
+        options?: BillyOptions,
+      ): Promise<BillyResponse> {
+        capturedOptions = options;
+        return { content: "ok" };
+      }
+    })("");
+    const ia = new Billy({ providerInstance: capturingMock });
+    await ia.create("test", {
+      files: [{ type: "image", path: "./foto.jpg" }],
+    });
+    assert.ok(capturedOptions);
+    assert.deepEqual(capturedOptions?.files, [
+      { type: "image", path: "./foto.jpg" },
+    ]);
+  });
+
+  it("chaining files + options.files se mergean", async () => {
+    let capturedOptions: BillyOptions | undefined;
+    const capturingMock = new (class extends MockProvider {
+      async chat(
+        _prompt: string,
+        _systemPrompt?: string,
+        options?: BillyOptions,
+      ): Promise<BillyResponse> {
+        capturedOptions = options;
+        return { content: "ok" };
+      }
+    })("");
+    const ia = new Billy({ providerInstance: capturingMock });
+    ia.withFile({ type: "text", content: "extra" });
+    await ia.create("test", {
+      files: [{ type: "image", path: "./foto.jpg" }],
+    });
+    assert.ok(capturedOptions);
+    assert.equal(capturedOptions?.files?.length, 2);
+    assert.equal(
+      (capturedOptions?.files?.[0] as { type: string }).type,
+      "text",
+    );
+    assert.equal(
+      (capturedOptions?.files?.[1] as { type: string }).type,
+      "image",
+    );
+  });
+
+  it("chained files se limpian tras run()", async () => {
+    const ia = new Billy({
+      providerInstance: new MockProvider(""),
+    }) as unknown as {
+      _files: unknown[];
+      withImage: (p: string) => void;
+      create: (p: string) => Promise<unknown>;
+    };
+    ia.withImage("./foto.jpg");
+    await ia.create("test");
+    assert.equal(ia._files.length, 0);
+  });
+
+  it("chained files funcionan con stream()", async () => {
+    let capturedOptions: BillyOptions | undefined;
+    const capturingMock = new (class extends MockProvider {
+      streamChunks = ["a", "b"];
+      async *chatStream(
+        _prompt: string,
+        _systemPrompt?: string,
+        options?: BillyOptions,
+      ): AsyncIterable<string> {
+        capturedOptions = options;
+        for (const chunk of this.streamChunks) {
+          yield chunk;
+        }
+      }
+    })("");
+    const ia = new Billy({ providerInstance: capturingMock });
+    ia.withImage("./foto.jpg");
+    const chunks: string[] = [];
+    for await (const chunk of ia.stream("test")) {
+      chunks.push(chunk);
+    }
+    assert.ok(capturedOptions);
+    assert.deepEqual(capturedOptions?.files, [
+      { type: "image", path: "./foto.jpg" },
+    ]);
+    assert.deepEqual(chunks, ["a", "b"]);
+  });
+
+  it("chaining combinado: withImage + options funciona", async () => {
+    const { ia } = makeIA("resultado");
+    const result = await ia.withImage("./img.jpg").create("describe");
+    assert.equal(result, "resultado");
+  });
+});

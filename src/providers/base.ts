@@ -1,7 +1,15 @@
-import type { BillyConfig, BillyOptions, BillyResponse } from "../types.js";
+import type {
+  BillyConfig,
+  BillyOptions,
+  BillyResponse,
+  FileContent,
+} from "../types.js";
 import type { ChatProvider } from "./types.js";
 
-type Message = { role: "system" | "user"; content: string };
+export type Message = {
+  role: "system" | "user";
+  content: string | Record<string, unknown>[];
+};
 
 function combineSignals(...signals: (AbortSignal | undefined)[]): AbortSignal {
   const valid = signals.filter(Boolean) as AbortSignal[];
@@ -40,7 +48,8 @@ export abstract class BaseProvider implements ChatProvider {
   protected abstract buildMessages(
     prompt: string,
     systemPrompt?: string,
-  ): Message[];
+    files?: FileContent[],
+  ): Promise<Message[]>;
 
   protected abstract completion(
     messages: Message[],
@@ -60,7 +69,8 @@ export abstract class BaseProvider implements ChatProvider {
     options?: BillyOptions,
   ): Promise<BillyResponse> {
     let lastError: Error | undefined;
-    const messages = this.buildMessages(prompt, systemPrompt);
+    const files = options?.files;
+    const messages = await this.buildMessages(prompt, systemPrompt, files);
 
     const prevTemp = this.temperature;
     const prevMax = this.maxTokens;
@@ -109,7 +119,8 @@ export abstract class BaseProvider implements ChatProvider {
     systemPrompt?: string,
     options?: BillyOptions,
   ): AsyncIterable<string> {
-    const messages = this.buildMessages(prompt, systemPrompt);
+    const files = options?.files;
+    const messages = await this.buildMessages(prompt, systemPrompt, files);
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), this.timeout);
 
