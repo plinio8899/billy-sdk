@@ -11,7 +11,7 @@ import { resolve } from "node:path";
 const CONFIG_DIR = ".billy-sdk";
 const CONFIG_FILE = "config.json";
 
-function parseEnvFile(): Record<string, string> {
+export function parseEnvFile(): Record<string, string> {
   const envPath = resolve(process.cwd(), ".env");
   if (!existsSync(envPath)) return {};
 
