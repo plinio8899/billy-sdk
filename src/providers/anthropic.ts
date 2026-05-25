@@ -5,11 +5,35 @@ import { BaseProvider } from "./base.js";
 
 const require = createRequire(import.meta.url);
 
-type Message = { role: "system" | "user"; content: string };
+type Message = { role: "user"; content: string };
+
+interface AnthropicChunk {
+  type: string;
+  delta?: { type?: string; text?: string };
+}
+
+interface AnthropicResponse {
+  content: { text?: string }[];
+}
+
+interface AnthropicClient {
+  messages: {
+    create(
+      params: {
+        model: string;
+        max_tokens: number;
+        system?: string;
+        messages: Message[];
+        temperature: number;
+        stream?: boolean;
+      },
+      options?: { signal?: AbortSignal },
+    ): Promise<AnthropicResponse> & AsyncIterable<AnthropicChunk>;
+  };
+}
 
 export class AnthropicProvider extends BaseProvider {
-  // biome-ignore lint/suspicious/noExplicitAny: optional SDK dependency
-  private client: any;
+  private client!: AnthropicClient;
 
   constructor(config: BillyConfig = {}) {
     super(config);
@@ -23,8 +47,7 @@ export class AnthropicProvider extends BaseProvider {
     this.client = this.loadClient(apiKey);
   }
 
-  // biome-ignore lint/suspicious/noExplicitAny: optional SDK dependency
-  private loadClient(apiKey: string): any {
+  private loadClient(apiKey: string): AnthropicClient {
     try {
       const { Anthropic } = require("@anthropic-ai/sdk");
       return new Anthropic({ apiKey, timeout: this.timeout });
@@ -57,10 +80,11 @@ export class AnthropicProvider extends BaseProvider {
         messages,
         temperature: this.temperature,
       },
-      // biome-ignore lint/suspicious/noExplicitAny: AbortSignal type mismatch
-      { signal: signal as any },
+      { signal },
     );
-    return { content: response.content?.[0]?.text || "" };
+    return {
+      content: (response as AnthropicResponse).content?.[0]?.text || "",
+    };
   }
 
   protected async *streamCompletion(
@@ -68,7 +92,7 @@ export class AnthropicProvider extends BaseProvider {
     systemPrompt: string | undefined,
     signal: AbortSignal,
   ): AsyncIterable<string> {
-    const stream = await this.client.messages.create(
+    const stream = this.client.messages.create(
       {
         model: this.model,
         max_tokens: this.maxTokens,
@@ -77,16 +101,15 @@ export class AnthropicProvider extends BaseProvider {
         temperature: this.temperature,
         stream: true,
       },
-      // biome-ignore lint/suspicious/noExplicitAny: AbortSignal type mismatch
-      { signal: signal as any },
+      { signal },
     );
 
-    for await (const chunk of stream) {
+    for await (const chunk of stream as AsyncIterable<AnthropicChunk>) {
       if (
         chunk.type === "content_block_delta" &&
         chunk.delta?.type === "text_delta"
       ) {
-        yield chunk.delta.text;
+        if (chunk.delta.text) yield chunk.delta.text;
       }
     }
   }

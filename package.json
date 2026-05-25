@@ -4,6 +4,12 @@
   "description": "Simple AI SDK for Node.js — generate, modify, validate, analyze, extract, and execute with natural language prompts",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
   "type": "module",
   "files": [
     "dist/",
@@ -54,6 +60,18 @@
   },
   "dependencies": {
     "groq-sdk": "^0.8.0"
+  },
+  "peerDependencies": {
+    "openai": "^4.0.0",
+    "@anthropic-ai/sdk": "^0.30.0"
+  },
+  "peerDependenciesMeta": {
+    "openai": {
+      "optional": true
+    },
+    "@anthropic-ai/sdk": {
+      "optional": true
+    }
   },
   "devDependencies": {
     "@biomejs/biome": "^2.4.15",

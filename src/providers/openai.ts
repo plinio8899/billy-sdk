@@ -1,15 +1,12 @@
 import { createRequire } from "node:module";
 import { resolveApiKey } from "../config.js";
 import type { BillyConfig } from "../types.js";
-import { BaseProvider } from "./base.js";
+import { type Client, OpenAICompatibleProvider } from "./openai-compatible.js";
 
 const require = createRequire(import.meta.url);
 
-type Message = { role: "system" | "user"; content: string };
-
-export class OpenAIProvider extends BaseProvider {
-  // biome-ignore lint/suspicious/noExplicitAny: optional SDK dependency
-  private client: any;
+export class OpenAIProvider extends OpenAICompatibleProvider {
+  protected client!: Client;
 
   constructor(config: BillyConfig = {}) {
     super(config);
@@ -23,10 +20,12 @@ export class OpenAIProvider extends BaseProvider {
     this.client = this.loadClient(apiKey);
   }
 
-  // biome-ignore lint/suspicious/noExplicitAny: optional SDK dependency
-  private loadClient(apiKey: string): any {
+  private loadClient(apiKey: string): Client {
     try {
-      const OpenAI = require("openai");
+      const OpenAI: new (config: {
+        apiKey: string;
+        timeout: number;
+      }) => Client = require("openai");
       return new OpenAI({ apiKey, timeout: this.timeout });
     } catch {
       throw new Error(
@@ -37,53 +36,5 @@ export class OpenAIProvider extends BaseProvider {
 
   protected defaultModel(): string {
     return "gpt-4o-mini";
-  }
-
-  protected buildMessages(prompt: string, systemPrompt?: string): Message[] {
-    const messages: Message[] = [];
-    if (systemPrompt) messages.push({ role: "system", content: systemPrompt });
-    messages.push({ role: "user", content: prompt });
-    return messages;
-  }
-
-  protected async completion(
-    messages: Message[],
-    _systemPrompt: string | undefined,
-    signal: AbortSignal,
-  ): Promise<{ content: string }> {
-    const response = await this.client.chat.completions.create(
-      {
-        model: this.model,
-        messages,
-        temperature: this.temperature,
-        max_tokens: this.maxTokens,
-      },
-      // biome-ignore lint/suspicious/noExplicitAny: AbortSignal type mismatch
-      { signal: signal as any },
-    );
-    return { content: response.choices[0]?.message?.content || "" };
-  }
-
-  protected async *streamCompletion(
-    messages: Message[],
-    _systemPrompt: string | undefined,
-    signal: AbortSignal,
-  ): AsyncIterable<string> {
-    const stream = await this.client.chat.completions.create(
-      {
-        model: this.model,
-        messages,
-        temperature: this.temperature,
-        max_tokens: this.maxTokens,
-        stream: true,
-      },
-      // biome-ignore lint/suspicious/noExplicitAny: AbortSignal type mismatch
-      { signal: signal as any },
-    );
-
-    for await (const chunk of stream) {
-      const content = chunk.choices[0]?.delta?.content || "";
-      if (content) yield content;
-    }
   }
 }

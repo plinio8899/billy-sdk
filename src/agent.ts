@@ -99,11 +99,33 @@ export class Billy<T = unknown> {
     if (!input) return { vars: undefined, options: undefined };
 
     const keys = Object.keys(input);
-    if (
-      keys.length > 0 &&
-      keys.every((k) => k === "as" || k === "length" || k === "type")
-    ) {
-      return { vars: undefined, options: input as BillyOptions };
+    const validOptionKeys = new Set(["as", "length", "type"]);
+    if (keys.length > 0 && keys.every((k) => validOptionKeys.has(k))) {
+      const opts = input as Record<string, string>;
+      const validAs = [
+        "string",
+        "number",
+        "boolean",
+        "array",
+        "object",
+        "json",
+      ];
+      const validLength = ["short", "medium", "long"];
+      const validType: TaskFunction[] = [
+        "create",
+        "modify",
+        "validate",
+        "analyze",
+        "extract",
+        "execute",
+      ];
+      if (
+        (!opts.as || validAs.includes(opts.as)) &&
+        (!opts.length || validLength.includes(opts.length)) &&
+        (!opts.type || (validType as string[]).includes(opts.type))
+      ) {
+        return { vars: undefined, options: input as BillyOptions };
+      }
     }
 
     return { vars: input as Variables, options: undefined };

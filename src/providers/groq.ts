@@ -1,12 +1,10 @@
 import Groq from "groq-sdk";
 import { resolveApiKey } from "../config.js";
 import type { BillyConfig } from "../types.js";
-import { BaseProvider } from "./base.js";
+import { type Client, OpenAICompatibleProvider } from "./openai-compatible.js";
 
-type Message = { role: "system" | "user"; content: string };
-
-export class GroqProvider extends BaseProvider {
-  private client: Groq;
+export class GroqProvider extends OpenAICompatibleProvider {
+  protected client!: Client;
 
   constructor(config: BillyConfig = {}) {
     super(config);
@@ -21,58 +19,10 @@ export class GroqProvider extends BaseProvider {
           "\n  4. Run: npx billy-sdk config set your-key",
       );
     }
-    this.client = new Groq({ apiKey });
+    this.client = new Groq({ apiKey }) as unknown as Client;
   }
 
   protected defaultModel(): string {
     return "llama-3.3-70b-versatile";
-  }
-
-  protected buildMessages(prompt: string, systemPrompt?: string): Message[] {
-    const messages: Message[] = [];
-    if (systemPrompt) messages.push({ role: "system", content: systemPrompt });
-    messages.push({ role: "user", content: prompt });
-    return messages;
-  }
-
-  protected async completion(
-    messages: Message[],
-    _systemPrompt: string | undefined,
-    signal: AbortSignal,
-  ): Promise<{ content: string }> {
-    const response = await this.client.chat.completions.create(
-      {
-        model: this.model,
-        messages,
-        temperature: this.temperature,
-        max_tokens: this.maxTokens,
-      },
-      // biome-ignore lint/suspicious/noExplicitAny: AbortSignal type mismatch
-      { signal: signal as any },
-    );
-    return { content: response.choices[0]?.message?.content || "" };
-  }
-
-  protected async *streamCompletion(
-    messages: Message[],
-    _systemPrompt: string | undefined,
-    signal: AbortSignal,
-  ): AsyncIterable<string> {
-    const stream = await this.client.chat.completions.create(
-      {
-        model: this.model,
-        messages,
-        temperature: this.temperature,
-        max_tokens: this.maxTokens,
-        stream: true,
-      },
-      // biome-ignore lint/suspicious/noExplicitAny: AbortSignal type mismatch
-      { signal: signal as any },
-    );
-
-    for await (const chunk of stream) {
-      const content = chunk.choices[0]?.delta?.content || "";
-      if (content) yield content;
-    }
   }
 }
