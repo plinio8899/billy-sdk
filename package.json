@@ -16,7 +16,7 @@
   "scripts": {
     "build": "tsc",
     "prepublishOnly": "npm run build",
-    "test": "node --test",
+    "test": "node --import tsx --test",
     "lint": "biome check src/",
     "lint:fix": "biome check --apply src/",
     "format": "biome format --write src/",
@@ -58,6 +58,7 @@
   "devDependencies": {
     "@biomejs/biome": "^2.4.15",
     "@types/node": "^20.0.0",
+    "tsx": "^4.22.3",
     "typescript": "^5.0.0",
     "vitepress": "^1.6.4"
   },
