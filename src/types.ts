@@ -50,6 +50,7 @@ export type SchemaDef =
 export interface BillyOptions {
   as?: ReturnType;
   length?: ResponseLength;
+  type?: TaskFunction;
 }
 
 export interface BillyStream extends AsyncIterable<string> {

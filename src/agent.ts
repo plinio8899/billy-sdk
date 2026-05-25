@@ -99,7 +99,7 @@ export class Billy<T = unknown> {
     if (!input) return { vars: undefined, options: undefined };
 
     const keys = Object.keys(input);
-    if (keys.length > 0 && keys.every((k) => k === "as" || k === "length")) {
+    if (keys.length > 0 && keys.every((k) => k === "as" || k === "length" || k === "type")) {
       return { vars: undefined, options: input as BillyOptions };
     }
 
@@ -113,6 +113,7 @@ export class Billy<T = unknown> {
       Date.now() - this._memoryTimestamp > this._memoryTtl
     ) {
       this._memory = [];
+      this._memoryTimestamp = 0;
     }
   }
 
@@ -222,9 +223,8 @@ export class Billy<T = unknown> {
     const errors = validateSchema(parsed, schema);
 
     if (errors.length === 0) {
-      const result = typeof parsed === "string" ? { error: parsed } : parsed;
-      this._results = result;
-      return result;
+      this._results = parsed;
+      return parsed;
     }
 
     if (attempt >= 2) {
@@ -362,6 +362,7 @@ export class Billy<T = unknown> {
     const { vars, options } = this.parseArgs(varsOrOptions);
     const returnType = options?.as || this._returnType;
     const length = options?.length || this._length;
+    const type = options?.type || "create";
     this._returnType = undefined;
     this._length = undefined;
     const schema = this._schema;
@@ -369,7 +370,7 @@ export class Billy<T = unknown> {
     const memoryPrompt = this.buildMemoryPrompt(resolvedPrompt);
 
     const fullPrompt = this.buildPrompt(
-      "create",
+      type,
       memoryPrompt,
       returnType,
       length,

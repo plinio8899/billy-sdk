@@ -110,7 +110,7 @@ const result = await IA
 
 If the LLM returns something that doesn't match the schema, billy-sdk automatically retries with the validation errors as feedback.
 
-## .stream(prompt, variables?)
+## .stream(prompt, variablesOrOptions?)
 
 Stream the response chunk by chunk in real time. Returns an `AsyncIterable<string>`.
 
@@ -124,9 +124,13 @@ for await (const chunk of stream) {
 console.log(IA.results); // resultado completo al finalizar
 ```
 
-Works with chaining:
+Accepts the same `{ as, length, type }` options as other methods:
 
 ```javascript
+// Stream with a different task type
+const stream = IA.stream("Hola mundo", { type: "extract" });
+
+// Or combined with chaining
 const stream = IA.asObject()
   .schema({ titulo: "string", contenido: "string" })
   .stream("Dame un cuento estructurado");

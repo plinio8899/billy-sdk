@@ -16,7 +16,7 @@ function cleanContent(content: string): string {
     /^Por supuesto,\s*/i,
     /^-{3,}\s*/,
     /^```\w*\s*/,
-    /^```\s*$/,
+    /^```\s*/,
     /^\d+\.\s+/,
   ];
 

@@ -52,6 +52,12 @@ Chain methods are consumed by calling one of these:
 | `.create()` | `Promise<unknown>` — full response |
 | `.stream()` | `AsyncIterable<string>` — chunk by chunk |
 
+`.stream()` also accepts `{ type }` as second argument to set the task (defaults to `"create"`):
+
+```javascript
+const stream = IA.stream("Extrae los datos", { type: "extract" });
+```
+
 ## Full Chain Example
 
 ```javascript
