@@ -99,7 +99,10 @@ export class Billy<T = unknown> {
     if (!input) return { vars: undefined, options: undefined };
 
     const keys = Object.keys(input);
-    if (keys.length > 0 && keys.every((k) => k === "as" || k === "length" || k === "type")) {
+    if (
+      keys.length > 0 &&
+      keys.every((k) => k === "as" || k === "length" || k === "type")
+    ) {
       return { vars: undefined, options: input as BillyOptions };
     }
 
@@ -369,12 +372,7 @@ export class Billy<T = unknown> {
     const resolvedPrompt = this.resolveVariables(prompt, vars);
     const memoryPrompt = this.buildMemoryPrompt(resolvedPrompt);
 
-    const fullPrompt = this.buildPrompt(
-      type,
-      memoryPrompt,
-      returnType,
-      length,
-    );
+    const fullPrompt = this.buildPrompt(type, memoryPrompt, returnType, length);
 
     const providerStream = this.client.chatStream(
       fullPrompt,
