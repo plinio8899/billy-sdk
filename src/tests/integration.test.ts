@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { after, before, describe, it } from "node:test";
 import { Billy, SchemaValidationError } from "../agent.js";
 import type { ChatProvider } from "../providers/types.js";
-import type { BillyConfig, BillyResponse } from "../types.js";
+import type { BillyConfig, BillyOptions, BillyResponse } from "../types.js";
 
 const ORIGINAL_KEY = process.env.GROQ_API_KEY;
 
@@ -28,7 +28,11 @@ class MockProvider implements ChatProvider {
     this.error = error;
   }
 
-  async chat(_prompt: string, _systemPrompt?: string): Promise<BillyResponse> {
+  async chat(
+    _prompt: string,
+    _systemPrompt?: string,
+    _options?: BillyOptions,
+  ): Promise<BillyResponse> {
     if (this.error) return { content: "", error: this.error };
     return { content: this.response };
   }
@@ -36,6 +40,7 @@ class MockProvider implements ChatProvider {
   async *chatStream(
     _prompt: string,
     _systemPrompt?: string,
+    _options?: BillyOptions,
   ): AsyncIterable<string> {
     for (const chunk of this.streamChunks) {
       yield chunk;
@@ -358,9 +363,52 @@ describe("Integration — edge cases", () => {
     assert.equal(result, 42);
   });
 
-  it("parseArgs trata objeto con keys inválidas como Variables", async () => {
+  it("parseArgs trata cualquier key de option como Options", async () => {
     const { ia } = makeIA("texto");
     const result = await ia.create("test", { as: "not-a-valid-type" });
     assert.equal(result, "texto");
+  });
+
+  it("parseArgs detecta temperature como key de option", async () => {
+    const { ia } = makeIA("42");
+    const result = await ia.create("test", { temperature: 0.2 });
+    assert.equal(result, 42);
+  });
+
+  it("parseArgs detecta maxTokens como key de option", async () => {
+    const { ia } = makeIA("42");
+    const result = await ia.create("test", { maxTokens: 200 });
+    assert.equal(result, 42);
+  });
+
+  it("parseArgs keys mixtas se tratan como Variables", async () => {
+    const { ia } = makeIA("texto con variable y 123");
+    const result = await ia.create("texto con {{as}} y {{extra}}", {
+      as: "variable",
+      extra: 123,
+    });
+    assert.equal(result, "texto con variable y 123");
+  });
+});
+
+describe("Integration — withMemory() chainer", () => {
+  it("withMemory() habilita memoria mid-flight", async () => {
+    const { ia } = makeIA("respuesta");
+    ia.withMemory(5);
+    await ia.create("Hola");
+    assert.equal(ia.memory.length, 2);
+  });
+
+  it("withMemory() sin memory inicial funciona", async () => {
+    const { ia } = makeIA("ok");
+    ia.withMemory(3, 60000);
+    await ia.create("test");
+    assert.equal(ia.memory.length, 2);
+  });
+
+  it("withMemory() retorna this para chaining", async () => {
+    const { ia } = makeIA("42");
+    const result = await ia.withMemory(5).asNumber().create("cuanto es 5*3");
+    assert.equal(result, 42);
   });
 });

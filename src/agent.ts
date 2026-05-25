@@ -98,34 +98,17 @@ export class Billy<T = unknown> {
   } {
     if (!input) return { vars: undefined, options: undefined };
 
+    const optionKeys = new Set([
+      "as",
+      "length",
+      "type",
+      "temperature",
+      "maxTokens",
+      "signal",
+    ]);
     const keys = Object.keys(input);
-    const validOptionKeys = new Set(["as", "length", "type"]);
-    if (keys.length > 0 && keys.every((k) => validOptionKeys.has(k))) {
-      const opts = input as Record<string, string>;
-      const validAs = [
-        "string",
-        "number",
-        "boolean",
-        "array",
-        "object",
-        "json",
-      ];
-      const validLength = ["short", "medium", "long"];
-      const validType: TaskFunction[] = [
-        "create",
-        "modify",
-        "validate",
-        "analyze",
-        "extract",
-        "execute",
-      ];
-      if (
-        (!opts.as || validAs.includes(opts.as)) &&
-        (!opts.length || validLength.includes(opts.length)) &&
-        (!opts.type || (validType as string[]).includes(opts.type))
-      ) {
-        return { vars: undefined, options: input as BillyOptions };
-      }
+    if (keys.length > 0 && keys.every((k) => optionKeys.has(k))) {
+      return { vars: undefined, options: input as BillyOptions };
     }
 
     return { vars: input as Variables, options: undefined };
@@ -200,6 +183,7 @@ export class Billy<T = unknown> {
     const response: BillyResponse = await this.client.chat(
       fullPrompt,
       this._systemPrompt,
+      options,
     );
 
     if (response.error) {
@@ -399,6 +383,7 @@ export class Billy<T = unknown> {
     const providerStream = this.client.chatStream(
       fullPrompt,
       this._systemPrompt,
+      options,
     );
 
     let fullContent = "";
@@ -445,29 +430,14 @@ export class Billy<T = unknown> {
     this._memoryTimestamp = 0;
   }
 
-  get memory(): readonly MemoryMessage[] {
-    return this._memory;
+  withMemory(max: number, ttl?: number): Billy<T> {
+    this._memoryMax = max;
+    this._memoryTtl = ttl || 0;
+    return this;
   }
 
-  // biome-ignore lint/suspicious/noThenProperty: intentional thenable pattern
-  then<TResult1 = InferReturn<T>, TResult2 = never>(
-    onfulfilled?:
-      | ((value: InferReturn<T>) => TResult1 | PromiseLike<TResult1>)
-      | undefined,
-    onrejected?:
-      | ((reason: unknown) => TResult2 | PromiseLike<TResult2>)
-      | undefined,
-  ): Promise<TResult1 | TResult2> {
-    if (this._error) {
-      return Promise.reject(new Error(this._error));
-    }
-    if (this._results !== undefined) {
-      return Promise.resolve(this._results as InferReturn<T>).then(
-        onfulfilled,
-        onrejected,
-      );
-    }
-    return Promise.reject(new Error("No result yet"));
+  get memory(): readonly MemoryMessage[] {
+    return this._memory;
   }
 
   get results(): InferReturn<T> | undefined {

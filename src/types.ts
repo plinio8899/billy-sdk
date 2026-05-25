@@ -51,6 +51,9 @@ export interface BillyOptions {
   as?: ReturnType;
   length?: ResponseLength;
   type?: TaskFunction;
+  temperature?: number;
+  maxTokens?: number;
+  signal?: AbortSignal;
 }
 
 export interface BillyStream extends AsyncIterable<string> {

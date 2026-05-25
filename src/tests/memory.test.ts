@@ -2,11 +2,15 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { Billy } from "../agent.js";
 import type { ChatProvider } from "../providers/types.js";
-import type { BillyConfig, BillyResponse } from "../types.js";
+import type { BillyConfig, BillyOptions, BillyResponse } from "../types.js";
 
 class MemoryMockProvider implements ChatProvider {
   private step = 0;
-  async chat(_prompt: string): Promise<BillyResponse> {
+  async chat(
+    _prompt: string,
+    _systemPrompt?: string,
+    _options?: BillyOptions,
+  ): Promise<BillyResponse> {
     this.step++;
     const content =
       this.step === 1
@@ -14,7 +18,11 @@ class MemoryMockProvider implements ChatProvider {
         : "Me alegra. ¿En qué más puedo ayudarte?";
     return { content };
   }
-  async *chatStream(): AsyncIterable<string> {
+  async *chatStream(
+    _prompt: string,
+    _systemPrompt?: string,
+    _options?: BillyOptions,
+  ): AsyncIterable<string> {
     yield "mock";
   }
 }

@@ -2,7 +2,12 @@ import { AnthropicProvider } from "./providers/anthropic.js";
 import { GroqProvider } from "./providers/groq.js";
 import { OpenAIProvider } from "./providers/openai.js";
 import type { ChatProvider } from "./providers/types.js";
-import type { BillyConfig, BillyResponse, ProviderType } from "./types.js";
+import type {
+  BillyConfig,
+  BillyOptions,
+  BillyResponse,
+  ProviderType,
+} from "./types.js";
 
 const providerMap: Record<
   ProviderType,
@@ -35,13 +40,21 @@ export class LlmClient {
     this.systemPrompt = config.systemPrompt || "";
   }
 
-  async chat(prompt: string, systemPrompt?: string): Promise<BillyResponse> {
+  async chat(
+    prompt: string,
+    systemPrompt?: string,
+    options?: BillyOptions,
+  ): Promise<BillyResponse> {
     const sp = systemPrompt ?? this.systemPrompt;
-    return this.provider.chat(prompt, sp || undefined);
+    return this.provider.chat(prompt, sp || undefined, options);
   }
 
-  chatStream(prompt: string, systemPrompt?: string): AsyncIterable<string> {
+  chatStream(
+    prompt: string,
+    systemPrompt?: string,
+    options?: BillyOptions,
+  ): AsyncIterable<string> {
     const sp = systemPrompt ?? this.systemPrompt;
-    return this.provider.chatStream(prompt, sp || undefined);
+    return this.provider.chatStream(prompt, sp || undefined, options);
   }
 }

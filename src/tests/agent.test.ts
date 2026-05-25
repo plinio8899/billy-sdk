@@ -63,19 +63,6 @@ describe("Billy", () => {
     assert.equal(agent.error, undefined);
   });
 
-  it("then() resuelve con results si existe", async () => {
-    const agent = new Billy();
-    Reflect.set(agent, "_results", "valor-test");
-    const result = await agent.then();
-    assert.equal(result, "valor-test");
-  });
-
-  it("then() rechaza si hay error", async () => {
-    const agent = new Billy();
-    Reflect.set(agent, "_error", "error-test");
-    await assert.rejects(() => agent.then());
-  });
-
   it("system() es encadenable y retorna la instancia", () => {
     const agent = new Billy();
     assert.equal(agent.system("eres un experto"), agent);
