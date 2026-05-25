@@ -56,13 +56,14 @@ await IA.create("genera 10 preguntas sobre la biblia");
 console.log(IA.results);
 
 // Analyze data
-await IA.analyze("dame estadísticas", { datos: [1, 2, 3, 4, 5] });
+const datos = JSON.stringify([1, 2, 3, 4, 5]);
+await IA.analyze(`dame estadísticas sobre ${datos}`);
 console.log(IA.results);
 
 // Extract information
+const texto = "Contacto: Juan Pérez, juan@mail.com, +52 555 123 4567";
 const info = await IA.asObject().extract(
-  "Extrae nombre, email y teléfono: {{texto}}",
-  { texto: "Contacto: Juan Pérez, juan@mail.com, +52 555 123 4567" }
+  `Extrae nombre, email y teléfono: ${texto}`,
 );
 console.log(info); // { nombre: "Juan Pérez", email: "juan@mail.com", telefono: "+52 555 123 4567" }
 ```

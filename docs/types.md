@@ -2,17 +2,7 @@
 
 Control how the response is parsed before returning.
 
-## Option 1: In the second argument
-
-```javascript
-await IA.create("cuanto es 10 + 20", { as: "number" });
-await IA.create("dame 3 colores", { as: "array" });
-await IA.create("dame un objeto", { as: "object" });
-await IA.create("¿esto es cierto?", { as: "boolean" });
-await IA.create("dame JSON", { as: "json" });
-```
-
-## Option 2: Chaining methods
+## Chaining methods
 
 ```javascript
 IA.asNumber();
@@ -84,3 +74,5 @@ IA.long();    // Detailed and complete
 // Combined with type
 const res = await IA.asArray().short().create("dame 3 números");
 ```
+
+See [Chaining → Length Setters](/chaining#length-setters) for details.

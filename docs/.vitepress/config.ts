@@ -57,6 +57,7 @@ export default defineConfig({
           { text: "Methods", link: "/methods" },
           { text: "Type Conversion", link: "/types" },
           { text: "Variables", link: "/variables" },
+          { text: "File & Image Handling", link: "/files" },
           { text: "Chaining", link: "/chaining" },
         ],
       },

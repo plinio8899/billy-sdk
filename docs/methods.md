@@ -122,7 +122,7 @@ for await (const chunk of stream) {
 console.log(IA.results); // resultado completo al finalizar
 ```
 
-Accepts `{ type, temperature, maxTokens, signal }` options:
+Accepts `{ type, temperature, maxTokens, signal, files }` options:
 
 ```javascript
 // Stream with a different task type
@@ -154,6 +154,7 @@ All task methods and `.stream()` accept an optional `BillyOptions` object:
 | `temperature` | `number` | Per-request temperature override |
 | `maxTokens` | `number` | Per-request max tokens override |
 | `signal` | `AbortSignal` | Abort signal for cancellation |
+| `files` | `FileContent[]` | Attach images, PDFs, or text files |
 
 ```javascript
 await IA.create("prompt", { temperature: 0.9, maxTokens: 200 });
@@ -161,6 +162,22 @@ await IA.create("prompt", { temperature: 0.9, maxTokens: 200 });
 const ac = new AbortController();
 const stream = IA.stream("long text", { signal: ac.signal });
 // later: ac.abort()
+```
+
+### File attachments
+
+Pass files inline or via chaining:
+
+```javascript
+// Via options
+await IA.create("Describe esta imagen", {
+  files: [{ type: "image", path: "./foto.jpg" }]
+});
+
+// Via chaining (recommended)
+await IA.withPdf("./informe.pdf").extract("Resume este documento");
+
+await IA.withImageUrl("https://ejemplo.com/img.jpg").create("Qué ves?");
 ```
 
 For type/length coercion, use chaining instead:

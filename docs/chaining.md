@@ -49,6 +49,30 @@ Each method returns the same instance, so you can chain indefinitely.
 |--------|-------------|
 | `.withMemory(n, ttl?)` | Enable conversation history (chainable) |
 
+### File Attachments
+
+| Method | Description |
+|--------|-------------|
+| `.withFile(file)` | Attach any file (accepts `FileContent` object or string path — auto-detects type by extension) |
+| `.withImage(path)` | Attach a local image (JPEG, PNG, GIF, WebP) |
+| `.withImageUrl(url, detail?)` | Attach a remote image URL (`detail`: `"auto"` \| `"low"` \| `"high"`) |
+| `.withPdf(path)` | Attach a PDF document |
+| `.withText(content)` | Attach raw text content |
+
+```javascript
+const IA = billy();
+
+await IA.withImage("./foto.jpg").create("Describe esta imagen");
+
+await IA.withPdf("./reporte.pdf").extract("Resume este documento");
+
+await IA.withImageUrl("https://ejemplo.com/img.jpg", "high")
+  .create("Qué hay en esta imagen?");
+
+await IA.withText("contexto extra")
+  .create("Usa esto como referencia");
+```
+
 ```javascript
 const IA = billy();
 IA.withMemory(5);
@@ -66,7 +90,7 @@ Chain methods are consumed by calling one of these:
 | `.create()` | `Promise<unknown>` — full response |
 | `.stream()` | `AsyncIterable<string>` — chunk by chunk |
 
-`.stream()` also accepts `{ type, temperature, maxTokens, signal }` as second argument:
+`.stream()` also accepts `{ type, temperature, maxTokens, signal, files }` as second argument:
 
 ```javascript
 const stream = IA.stream("Extrae los datos", { type: "extract", temperature: 0.5 });

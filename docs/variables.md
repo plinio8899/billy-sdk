@@ -1,25 +1,29 @@
 # Variables
 
-Inject dynamic data into prompts using `{{placeholder}}` syntax.
+Inject dynamic data into prompts using **JavaScript template literals**.
 
 ## Basic Usage
 
 ```javascript
-await IA.create("Genera 5 preguntas sobre {{tema}}", { tema: "historia" });
+const tema = "historia";
+await IA.create(`Genera 5 preguntas sobre ${tema}`);
 ```
 
 ## Multiple Variables
 
 ```javascript
+const tipo = "poema";
+const tema = "el mar";
+const nivel = "principiante";
+
 await IA.create(
-  "Escribe un {{tipo}} sobre {{tema}} para nivel {{nivel}}",
-  { tipo: "poema", tema: "el mar", nivel: "principiante" }
+  `Escribe un ${tipo} sobre ${tema} para nivel ${nivel}`,
 );
 ```
 
 ## Complex Values
 
-Objects and arrays are automatically serialized to JSON:
+Objects and arrays are serialized inline:
 
 ```javascript
 const data = {
@@ -28,25 +32,17 @@ const data = {
   periodo: "Q1 2026",
 };
 
-await IA.analyze("Analiza estos datos: {{datos}}", { datos: data });
-```
-
-## Combined with Options
-
-You can pass both variables and type options in the second argument:
-
-```javascript
-await IA.create("Cuánto es {{a}} + {{b}}", {
-  a: 10,
-  b: 20,
-  as: "number",
-});
+await IA.analyze(
+  `Analiza estos datos: ${JSON.stringify(data, null, 2)}`,
+);
 ```
 
 ## With Chaining
 
 ```javascript
-const result = await IA.asNumber()
-  .short()
-  .execute("Calcula {{x}} * {{y}}", { x: 7, y: 8 });
+const x = 7;
+const y = 8;
+const result = await IA.asNumber().short().execute(`${x} * ${y}`);
 ```
+
+> Instead of `{{placeholder}}` syntax (removed), use standard JavaScript template literals directly in the prompt string.
