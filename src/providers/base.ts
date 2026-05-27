@@ -90,14 +90,17 @@ export abstract class BaseProvider implements ChatProvider {
 
     try {
       for (let attempt = 1; attempt <= this.retries; attempt++) {
+        let timeoutId: ReturnType<typeof setTimeout> | undefined;
+        let abortCleanup: () => void = () => {};
         try {
           const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), this.timeout);
+          timeoutId = setTimeout(() => controller.abort(), this.timeout);
 
           const { signal, cleanup } = combineSignals(
             controller.signal,
             options?.signal,
           );
+          abortCleanup = cleanup;
 
           const response = await this.completion(
             messages,
@@ -106,11 +109,11 @@ export abstract class BaseProvider implements ChatProvider {
           );
 
           clearTimeout(timeoutId);
-          cleanup();
+          abortCleanup();
           return { content: response.content.trim() };
         } catch (error: unknown) {
           clearTimeout(timeoutId);
-          cleanup();
+          abortCleanup();
           lastError = error as Error;
 
           if (attempt < this.retries) {
@@ -147,22 +150,26 @@ export abstract class BaseProvider implements ChatProvider {
     try {
       for (let attempt = 1; attempt <= this.retries; attempt++) {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), this.timeout);
+        let timeoutId: ReturnType<typeof setTimeout> | undefined;
+        let abortCleanup: () => void = () => {};
         try {
+          timeoutId = setTimeout(() => controller.abort(), this.timeout);
+
           const { signal, cleanup } = combineSignals(
             controller.signal,
             options?.signal,
           );
+          abortCleanup = cleanup;
           const stream = this.streamCompletion(messages, systemPrompt, signal);
 
           for await (const chunk of stream) {
             yield chunk;
           }
-          cleanup();
+          abortCleanup();
           clearTimeout(timeoutId);
           return;
         } catch (error: unknown) {
-          cleanup();
+          abortCleanup();
           clearTimeout(timeoutId);
           lastError = error as Error;
           if (attempt < this.retries) {

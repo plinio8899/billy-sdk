@@ -87,7 +87,7 @@ describe("parseAs", () => {
     const result = parseAs(
       "array",
       "First, let me explain, the answer is a, b, c",
-    );
+    ) as string[];
     assert.equal(result.length, 1);
     assert.equal(result[0], "First, let me explain, the answer is a, b, c");
   });
