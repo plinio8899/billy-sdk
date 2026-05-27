@@ -4,7 +4,12 @@ import {
   readAsBase64,
   readAsText,
 } from "../file-utils.js";
-import type { FileContent } from "../types.js";
+import type {
+  FileContent,
+  SchemaDef,
+  TokenUsage,
+  ToolDefinition,
+} from "../types.js";
 import { BaseProvider, type Message } from "./base.js";
 
 interface CompletionChunk {
@@ -12,7 +17,20 @@ interface CompletionChunk {
 }
 
 interface CompletionResponse {
-  choices: { message?: { content?: string } }[];
+  choices: {
+    message?: {
+      content?: string;
+      tool_calls?: {
+        id: string;
+        function: { name: string; arguments: string };
+      }[];
+    };
+  }[];
+  usage?: {
+    prompt_tokens: number;
+    completion_tokens: number;
+    total_tokens: number;
+  };
 }
 
 export interface Client {
@@ -26,8 +44,38 @@ export interface Client {
   };
 }
 
+function buildToolsPayload(
+  tools?: ToolDefinition[],
+): Record<string, unknown>[] | undefined {
+  if (!tools || tools.length === 0) return undefined;
+  return tools.map((t) => ({
+    type: "function",
+    function: {
+      name: t.name,
+      description: t.description || "",
+      parameters: {
+        type: "object",
+        properties: Object.fromEntries(
+          Object.entries(t.schema).map(([key, val]) => [
+            key,
+            {
+              type: Array.isArray(val) ? "array" : val,
+              items: Array.isArray(val) ? { type: val[0] } : undefined,
+            },
+          ]),
+        ),
+        required: Object.keys(t.schema),
+      },
+    },
+  }));
+}
+
 export abstract class OpenAICompatibleProvider extends BaseProvider {
   protected abstract client: Client;
+
+  supportsNativeJson(): boolean {
+    return true;
+  }
 
   protected async buildMessages(
     prompt: string,
@@ -76,37 +124,85 @@ export abstract class OpenAICompatibleProvider extends BaseProvider {
     messages: Message[],
     _systemPrompt: string | undefined,
     signal: AbortSignal,
-  ): Promise<{ content: string }> {
-    const response = await this.client.chat.completions.create(
-      {
-        model: this.model,
-        messages,
-        temperature: this.temperature,
-        max_tokens: this.maxTokens,
-      },
-      { signal },
-    );
-    return {
-      content:
-        (response as CompletionResponse).choices[0]?.message?.content || "",
+    schema?: SchemaDef,
+    tools?: ToolDefinition[],
+  ): Promise<{
+    content: string;
+    usage?: TokenUsage;
+    toolCalls?: { id: string; name: string; args: Record<string, unknown> }[];
+  }> {
+    const params: Record<string, unknown> = {
+      model: this.model,
+      messages,
+      temperature: this.temperature,
+      max_tokens: this.maxTokens,
     };
+
+    if (schema) {
+      params.response_format = { type: "json_object" };
+    }
+
+    const toolsPayload = buildToolsPayload(tools);
+    if (toolsPayload) {
+      params.tools = toolsPayload;
+    }
+
+    const response = await this.client.chat.completions.create(params, {
+      signal,
+    });
+
+    const resp = response as CompletionResponse;
+    const message = resp.choices[0]?.message;
+    const content = message?.content || "";
+
+    let usage: TokenUsage | undefined;
+    if (resp.usage) {
+      usage = {
+        promptTokens: resp.usage.prompt_tokens,
+        completionTokens: resp.usage.completion_tokens,
+        totalTokens: resp.usage.total_tokens,
+      };
+    }
+
+    let toolCalls:
+      | { id: string; name: string; args: Record<string, unknown> }[]
+      | undefined;
+    if (message?.tool_calls && message.tool_calls.length > 0) {
+      toolCalls = message.tool_calls.map((tc) => ({
+        id: tc.id,
+        name: tc.function.name,
+        args: JSON.parse(tc.function.arguments),
+      }));
+    }
+
+    return { content, usage, toolCalls };
   }
 
   protected async *streamCompletion(
     messages: Message[],
     _systemPrompt: string | undefined,
     signal: AbortSignal,
+    schema?: SchemaDef,
+    tools?: ToolDefinition[],
   ): AsyncIterable<string> {
-    const stream = this.client.chat.completions.create(
-      {
-        model: this.model,
-        messages,
-        temperature: this.temperature,
-        max_tokens: this.maxTokens,
-        stream: true,
-      },
-      { signal },
-    );
+    const params: Record<string, unknown> = {
+      model: this.model,
+      messages,
+      temperature: this.temperature,
+      max_tokens: this.maxTokens,
+      stream: true,
+    };
+
+    if (schema) {
+      params.response_format = { type: "json_object" };
+    }
+
+    const toolsPayload = buildToolsPayload(tools);
+    if (toolsPayload) {
+      params.tools = toolsPayload;
+    }
+
+    const stream = this.client.chat.completions.create(params, { signal });
 
     for await (const chunk of stream as AsyncIterable<CompletionChunk>) {
       const content = chunk.choices[0]?.delta?.content || "";

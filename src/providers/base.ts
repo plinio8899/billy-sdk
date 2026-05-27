@@ -3,12 +3,23 @@ import type {
   BillyOptions,
   BillyResponse,
   FileContent,
+  SchemaDef,
+  TokenUsage,
+  ToolDefinition,
 } from "../types.js";
 import type { ChatProvider } from "./types.js";
 
 export type Message = {
   role: "system" | "user";
   content: string | Record<string, unknown>[];
+};
+
+const MODEL_PRICING: Record<string, { input: number; output: number }> = {
+  "llama-3.3-70b-versatile": { input: 0.59, output: 0.79 },
+  "gpt-4o-mini": { input: 0.15, output: 0.6 },
+  "gpt-4o": { input: 2.5, output: 10 },
+  "claude-3-haiku-20240307": { input: 0.25, output: 1.25 },
+  "claude-3-5-sonnet-20241022": { input: 3, output: 15 },
 };
 
 function combineSignals(...signals: (AbortSignal | undefined)[]): {
@@ -45,6 +56,7 @@ export abstract class BaseProvider implements ChatProvider {
   protected maxTokens: number;
   protected timeout: number;
   protected retries: number;
+  protected lastUsage: TokenUsage | undefined;
 
   constructor(config: BillyConfig = {}) {
     this.model = config.model || this.defaultModel();
@@ -52,6 +64,10 @@ export abstract class BaseProvider implements ChatProvider {
     this.maxTokens = config.maxTokens || 1000;
     this.timeout = config.timeout || 30000;
     this.retries = config.retries || 3;
+  }
+
+  supportsNativeJson(): boolean {
+    return false;
   }
 
   protected abstract defaultModel(): string;
@@ -65,13 +81,29 @@ export abstract class BaseProvider implements ChatProvider {
     messages: Message[],
     systemPrompt: string | undefined,
     signal: AbortSignal,
-  ): Promise<{ content: string }>;
+    schema?: SchemaDef,
+    tools?: ToolDefinition[],
+  ): Promise<{
+    content: string;
+    usage?: TokenUsage;
+    toolCalls?: { id: string; name: string; args: Record<string, unknown> }[];
+  }>;
 
   protected abstract streamCompletion(
     messages: Message[],
     systemPrompt: string | undefined,
     signal: AbortSignal,
+    schema?: SchemaDef,
+    tools?: ToolDefinition[],
   ): AsyncIterable<string>;
+
+  protected estimateCost(usage: TokenUsage): number | undefined {
+    const pricing = MODEL_PRICING[this.model];
+    if (!pricing) return undefined;
+    const inputCost = (usage.promptTokens / 1000) * pricing.input;
+    const outputCost = (usage.completionTokens / 1000) * pricing.output;
+    return Number((inputCost + outputCost).toFixed(6));
+  }
 
   async chat(
     prompt: string,
@@ -106,18 +138,37 @@ export abstract class BaseProvider implements ChatProvider {
             messages,
             systemPrompt,
             signal,
+            options?.schema,
+            options?.tools,
           );
 
           clearTimeout(timeoutId);
           abortCleanup();
-          return { content: response.content.trim() };
+
+          const content = response.content.trim();
+          if (response.usage) {
+            this.lastUsage = response.usage;
+          }
+
+          const result: BillyResponse = { content };
+          if (response.toolCalls) result.toolCalls = response.toolCalls;
+          if (this.lastUsage) {
+            result.usage = this.lastUsage;
+            const cost = this.estimateCost(this.lastUsage);
+            if (cost !== undefined) {
+              (
+                result.usage as TokenUsage & { estimatedCost?: number }
+              ).estimatedCost = cost;
+            }
+          }
+          return result;
         } catch (error: unknown) {
           clearTimeout(timeoutId);
           abortCleanup();
           lastError = error as Error;
 
           if (attempt < this.retries) {
-            await this.delay(1000 * attempt);
+            await this.delay(1000 * 2 ** (attempt - 1));
           }
         }
       }
@@ -160,7 +211,13 @@ export abstract class BaseProvider implements ChatProvider {
             options?.signal,
           );
           abortCleanup = cleanup;
-          const stream = this.streamCompletion(messages, systemPrompt, signal);
+          const stream = this.streamCompletion(
+            messages,
+            systemPrompt,
+            signal,
+            options?.schema,
+            options?.tools,
+          );
 
           for await (const chunk of stream) {
             yield chunk;
@@ -173,7 +230,7 @@ export abstract class BaseProvider implements ChatProvider {
           clearTimeout(timeoutId);
           lastError = error as Error;
           if (attempt < this.retries) {
-            await this.delay(1000 * attempt);
+            await this.delay(1000 * 2 ** (attempt - 1));
           }
         }
       }

@@ -6,12 +6,16 @@ import type {
   BillyOptions,
   BillyResponse,
   BillyStream,
+  CostInfo,
   FileContent,
   InferReturn,
   ResponseLength,
   ReturnType,
   SchemaDef,
   TaskFunction,
+  ToolDefinition,
+  ToolHandler,
+  ToolSchema,
 } from "./types.js";
 
 type MemoryMessage = { role: "user" | "assistant"; content: string };
@@ -30,6 +34,8 @@ export class Billy<T = unknown> {
   private _memoryTtl: number = 0;
   private _memoryTimestamp: number = 0;
   private _files: FileContent[] = [];
+  private _tools: ToolDefinition[] = [];
+  private _usageHistory: CostInfo[] = [];
 
   constructor(config: BillyConfig = {}) {
     this.client = new LlmClient(config);
@@ -144,48 +150,121 @@ export class Billy<T = unknown> {
 
     const memoryPrompt = this.buildMemoryPrompt(prompt);
 
-    const fullPrompt = this.buildPrompt(type, memoryPrompt, returnType, length);
+    const fullPrompt = schema
+      ? this.buildPrompt(type, memoryPrompt, returnType, length)
+      : this.buildPrompt(type, memoryPrompt, returnType, length);
 
-    const response: BillyResponse = await this.client.chat(
-      fullPrompt,
-      this._systemPrompt,
-      mergedOptions,
-    );
+    const tools = this._tools.length > 0 ? this._tools : undefined;
+    this._tools = [];
 
-    if (response.error) {
-      this._error = response.error;
-      this._results = undefined;
-      this._raw = "";
-      throw new Error(response.error);
-    }
+    const toolCalls: ToolDefinition[] = tools || [];
 
-    this._error = undefined;
-    this._raw = response.content;
+    let currentPrompt = fullPrompt;
+    const allMessages: { role: string; content: string }[] = [];
+    const maxToolIterations = 10;
 
-    if (schema) {
-      const result = await this.resolveWithSchema(
-        response.content,
-        schema,
-        fullPrompt,
+    for (let iteration = 0; iteration <= maxToolIterations; iteration++) {
+      const response: BillyResponse = await this.client.chat(
+        currentPrompt,
+        this._systemPrompt,
+        {
+          ...mergedOptions,
+          schema,
+          tools: toolCalls.length > 0 ? toolCalls : undefined,
+        },
       );
+
+      if (response.usage) {
+        const cost: CostInfo = {
+          ...response.usage,
+          model: "",
+          estimatedCost: (response.usage as { estimatedCost?: number })
+            .estimatedCost,
+        };
+        this._usageHistory.push(cost);
+      }
+
+      if (response.error) {
+        this._error = response.error;
+        this._results = undefined;
+        this._raw = "";
+        throw new Error(response.error);
+      }
+
+      this._error = undefined;
+      this._raw = response.content;
+
+      if (
+        response.toolCalls &&
+        response.toolCalls.length > 0 &&
+        toolCalls.length > 0
+      ) {
+        allMessages.push({
+          role: "assistant",
+          content: response.content || JSON.stringify(response.toolCalls),
+        });
+
+        for (const tc of response.toolCalls) {
+          const toolDef = toolCalls.find((t) => t.name === tc.name);
+          if (!toolDef) {
+            allMessages.push({
+              role: "user",
+              content: `Tool "${tc.name}" not found. Available: ${toolCalls.map((t) => t.name).join(", ")}`,
+            });
+            continue;
+          }
+          try {
+            const result = await toolDef.handler(tc.args);
+            allMessages.push({
+              role: "user",
+              content: `Result of ${tc.name}: ${result}`,
+            });
+          } catch (err) {
+            allMessages.push({
+              role: "user",
+              content: `Error executing ${tc.name}: ${(err as Error).message}`,
+            });
+          }
+        }
+
+        currentPrompt = allMessages
+          .map((m) => `${m.role}: ${m.content}`)
+          .join("\n");
+        continue;
+      }
+
+      if (schema) {
+        try {
+          const result = await this.resolveWithSchema(
+            response.content,
+            schema,
+            fullPrompt,
+          );
+          if (this._memoryMax > 0) {
+            this.addToMemory("user", prompt);
+            this.addToMemory("assistant", response.content);
+          }
+          return result;
+        } catch (err) {
+          this._error = (err as Error).message;
+          throw err;
+        }
+      }
+
+      const parsed = parseResponse(response.content);
+      this._results = returnType
+        ? parseAs(returnType, response.content)
+        : parsed;
 
       if (this._memoryMax > 0) {
         this.addToMemory("user", prompt);
         this.addToMemory("assistant", response.content);
       }
 
-      return result;
+      return this._results;
     }
 
-    const parsed = parseResponse(response.content);
-    this._results = returnType ? parseAs(returnType, response.content) : parsed;
-
-    if (this._memoryMax > 0) {
-      this.addToMemory("user", prompt);
-      this.addToMemory("assistant", response.content);
-    }
-
-    return this._results;
+    throw new Error("Tool execution exceeded maximum iterations");
   }
 
   private async resolveWithSchema(
@@ -370,6 +449,16 @@ export class Billy<T = unknown> {
     return this;
   }
 
+  tool(name: string, schema: ToolSchema, handler: ToolHandler): Billy<T> {
+    this._tools.push({ name, schema, handler });
+    return this;
+  }
+
+  tools(defs: ToolDefinition[]): Billy<T> {
+    this._tools.push(...defs);
+    return this;
+  }
+
   async *stream(prompt: string, options?: BillyOptions): BillyStream {
     const returnType = this._returnType;
     const length = this._length;
@@ -380,8 +469,22 @@ export class Billy<T = unknown> {
     this._schema = undefined;
     const files = [...this._files, ...(options?.files || [])];
     this._files = [];
+    const tools = [...this._tools, ...(options?.tools || [])];
+    this._tools = [];
     const mergedOptions: BillyOptions | undefined =
       files.length > 0 ? { ...options, files } : options;
+
+    if (tools.length > 0) {
+      const result = await this.run(type as TaskFunction, prompt, {
+        ...mergedOptions,
+        schema,
+        tools,
+      });
+      const content =
+        typeof result === "string" ? result : JSON.stringify(result);
+      if (content) yield content;
+      return;
+    }
 
     if (type === "modify" && this._results !== undefined) {
       const serialized =
@@ -398,7 +501,7 @@ export class Billy<T = unknown> {
     const providerStream = this.client.chatStream(
       fullPrompt,
       this._systemPrompt,
-      mergedOptions,
+      schema ? { ...mergedOptions, schema } : mergedOptions,
     );
 
     let fullContent = "";
@@ -422,7 +525,7 @@ export class Billy<T = unknown> {
             );
           } catch (err) {
             this._error = (err as Error).message;
-            // biome-ignore lint/correctness/noUnsafeFinally: intentional - propagate schema errors after stream completion
+            // biome-ignore lint/correctness/noUnsafeFinally: propagate schema errors after stream completion
             throw err;
           }
         } else {
@@ -465,6 +568,14 @@ export class Billy<T = unknown> {
 
   get error(): string | undefined {
     return this._error;
+  }
+
+  get usage(): CostInfo | undefined {
+    return this._usageHistory[this._usageHistory.length - 1];
+  }
+
+  get usageHistory(): readonly CostInfo[] {
+    return this._usageHistory;
   }
 }
 

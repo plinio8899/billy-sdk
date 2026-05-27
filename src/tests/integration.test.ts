@@ -37,6 +37,10 @@ class MockProvider implements ChatProvider {
     return { content: this.response };
   }
 
+  supportsNativeJson(): boolean {
+    return false;
+  }
+
   async *chatStream(
     _prompt: string,
     _systemPrompt?: string,

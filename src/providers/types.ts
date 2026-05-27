@@ -11,6 +11,8 @@ export interface ChatProvider {
     systemPrompt?: string,
     options?: BillyOptions,
   ): AsyncIterable<string>;
+  /** Whether this provider supports native JSON structured output */
+  supportsNativeJson(): boolean;
 }
 
 export type ProviderConstructor = new (config: BillyConfig) => ChatProvider;

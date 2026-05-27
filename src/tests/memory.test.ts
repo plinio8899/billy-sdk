@@ -18,6 +18,10 @@ class MemoryMockProvider implements ChatProvider {
         : "Me alegra. ¿En qué más puedo ayudarte?";
     return { content };
   }
+  supportsNativeJson(): boolean {
+    return false;
+  }
+
   async *chatStream(
     _prompt: string,
     _systemPrompt?: string,

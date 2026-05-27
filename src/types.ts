@@ -1,5 +1,16 @@
 export type ProviderType = "groq" | "openai" | "anthropic";
 
+export interface TokenUsage {
+  promptTokens: number;
+  completionTokens: number;
+  totalTokens: number;
+}
+
+export interface CostInfo extends TokenUsage {
+  estimatedCost?: number;
+  model: string;
+}
+
 export interface BillyConfig {
   provider?: ProviderType;
   model?: string;
@@ -13,11 +24,34 @@ export interface BillyConfig {
   memoryTtl?: number;
   /** @internal Used for injecting a mock provider in tests */
   providerInstance?: unknown;
+  /** Ordered list of fallback providers when the primary fails */
+  fallback?: ProviderType[];
+  /** Per-provider config overrides for fallback providers */
+  fallbackConfig?: Partial<Record<ProviderType, Partial<BillyConfig>>>;
 }
 
 export interface BillyResponse {
   content: string;
   error?: string;
+  usage?: TokenUsage;
+  toolCalls?: ToolCall[];
+}
+
+export type ToolSchema = Record<string, SchemaPrimitive | SchemaPrimitive[]>;
+
+export type ToolHandler = (args: Record<string, unknown>) => Promise<string>;
+
+export interface ToolDefinition {
+  name: string;
+  description?: string;
+  schema: ToolSchema;
+  handler: ToolHandler;
+}
+
+export interface ToolCall {
+  id: string;
+  name: string;
+  args: Record<string, unknown>;
 }
 
 export type TaskFunction =
@@ -58,6 +92,8 @@ export interface BillyOptions {
   maxTokens?: number;
   signal?: AbortSignal;
   files?: FileContent[];
+  schema?: SchemaDef;
+  tools?: ToolDefinition[];
 }
 
 export interface BillyStream extends AsyncIterable<string> {

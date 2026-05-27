@@ -6,11 +6,17 @@ export type {
   BillyOptions,
   BillyResponse,
   BillyStream,
+  CostInfo,
   FileContent,
   InferReturn,
   ReturnType,
   SchemaDef,
   TaskFunction,
+  TokenUsage,
+  ToolCall,
+  ToolDefinition,
+  ToolHandler,
+  ToolSchema,
 } from "./types.js";
 export { Billy };
 

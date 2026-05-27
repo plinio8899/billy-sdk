@@ -1,7 +1,13 @@
 import { createRequire } from "node:module";
 import { resolveApiKey } from "../config.js";
 import { mimeType, readAsBase64, readAsText } from "../file-utils.js";
-import type { BillyConfig, FileContent } from "../types.js";
+import type {
+  BillyConfig,
+  FileContent,
+  SchemaDef,
+  TokenUsage,
+  ToolDefinition,
+} from "../types.js";
 import { BaseProvider, type Message } from "./base.js";
 
 const require = createRequire(import.meta.url);
@@ -9,26 +15,44 @@ const require = createRequire(import.meta.url);
 interface AnthropicChunk {
   type: string;
   delta?: { type?: string; text?: string };
+  content_block?: { type: string; [key: string]: unknown };
 }
 
 interface AnthropicResponse {
-  content: { text?: string }[];
+  content: { type: string; text?: string; [key: string]: unknown }[];
+  usage: { input_tokens: number; output_tokens: number };
 }
 
 interface AnthropicClient {
   messages: {
     create(
-      params: {
-        model: string;
-        max_tokens: number;
-        system?: string;
-        messages: Message[];
-        temperature: number;
-        stream?: boolean;
-      },
+      params: Record<string, unknown>,
       options?: { signal?: AbortSignal },
     ): Promise<AnthropicResponse> & AsyncIterable<AnthropicChunk>;
   };
+}
+
+function buildAnthropicTools(
+  tools?: ToolDefinition[],
+): Record<string, unknown>[] | undefined {
+  if (!tools || tools.length === 0) return undefined;
+  return tools.map((t) => ({
+    name: t.name,
+    description: t.description || "",
+    input_schema: {
+      type: "object",
+      properties: Object.fromEntries(
+        Object.entries(t.schema).map(([key, val]) => [
+          key,
+          {
+            type: Array.isArray(val) ? "array" : val,
+            items: Array.isArray(val) ? { type: val[0] } : undefined,
+          },
+        ]),
+      ),
+      required: Object.keys(t.schema),
+    },
+  }));
 }
 
 export class AnthropicProvider extends BaseProvider {
@@ -56,6 +80,10 @@ export class AnthropicProvider extends BaseProvider {
           "  npm install @anthropic-ai/sdk",
       );
     }
+  }
+
+  supportsNativeJson(): boolean {
+    return false;
   }
 
   protected defaultModel(): string {
@@ -110,38 +138,128 @@ export class AnthropicProvider extends BaseProvider {
     messages: Message[],
     systemPrompt: string | undefined,
     signal: AbortSignal,
-  ): Promise<{ content: string }> {
-    const response = await this.client.messages.create(
-      {
-        model: this.model,
-        max_tokens: this.maxTokens,
-        system: systemPrompt || undefined,
-        messages,
-        temperature: this.temperature,
-      },
-      { signal },
-    );
-    return {
-      content: (response as AnthropicResponse).content?.[0]?.text || "",
+    schema?: SchemaDef,
+    tools?: ToolDefinition[],
+  ): Promise<{
+    content: string;
+    usage?: TokenUsage;
+    toolCalls?: { id: string; name: string; args: Record<string, unknown> }[];
+  }> {
+    const params: Record<string, unknown> = {
+      model: this.model,
+      max_tokens: this.maxTokens,
+      messages,
+      temperature: this.temperature,
     };
+
+    if (systemPrompt) {
+      params.system = systemPrompt;
+    }
+
+    let allTools = buildAnthropicTools(tools) || [];
+
+    if (schema) {
+      const schemaTool = {
+        name: "respond",
+        description: "Respond with the required JSON structure",
+        input_schema: {
+          type: "object",
+          properties: Object.fromEntries(
+            Object.entries(schemaToFlat(schema)).map(([key, val]) => [
+              key,
+              { type: val },
+            ]),
+          ),
+          required: Object.keys(schemaToFlat(schema)),
+        },
+      };
+      allTools = [schemaTool, ...allTools];
+    }
+
+    if (allTools.length > 0) {
+      params.tools = allTools;
+      params.tool_choice = schema
+        ? { type: "tool", name: "respond" }
+        : { type: "auto" };
+    }
+
+    const response = await this.client.messages.create(params, { signal });
+    const resp = response as AnthropicResponse;
+
+    let content = "";
+    let toolCalls:
+      | { id: string; name: string; args: Record<string, unknown> }[]
+      | undefined;
+
+    for (const block of resp.content) {
+      if (block.type === "text") {
+        content += block.text || "";
+      } else if (block.type === "tool_use") {
+        if (!toolCalls) toolCalls = [];
+        toolCalls.push({
+          id: block.id as string,
+          name: block.name as string,
+          args: JSON.parse(JSON.stringify(block.input)),
+        });
+      }
+    }
+
+    let usage: TokenUsage | undefined;
+    if (resp.usage) {
+      usage = {
+        promptTokens: resp.usage.input_tokens,
+        completionTokens: resp.usage.output_tokens,
+        totalTokens: resp.usage.input_tokens + resp.usage.output_tokens,
+      };
+    }
+
+    return { content, usage, toolCalls };
   }
 
   protected async *streamCompletion(
     messages: Message[],
     systemPrompt: string | undefined,
     signal: AbortSignal,
+    schema?: SchemaDef,
+    tools?: ToolDefinition[],
   ): AsyncIterable<string> {
-    const stream = this.client.messages.create(
-      {
-        model: this.model,
-        max_tokens: this.maxTokens,
-        system: systemPrompt || undefined,
-        messages,
-        temperature: this.temperature,
-        stream: true,
-      },
-      { signal },
-    );
+    const params: Record<string, unknown> = {
+      model: this.model,
+      max_tokens: this.maxTokens,
+      messages,
+      temperature: this.temperature,
+      stream: true,
+    };
+
+    if (systemPrompt) {
+      params.system = systemPrompt;
+    }
+
+    const allTools = buildAnthropicTools(tools) || [];
+    if (schema) {
+      const schemaTool = {
+        name: "respond",
+        description: "Respond with the required JSON structure",
+        input_schema: {
+          type: "object",
+          properties: Object.fromEntries(
+            Object.entries(schemaToFlat(schema)).map(([key, val]) => [
+              key,
+              { type: val },
+            ]),
+          ),
+          required: Object.keys(schemaToFlat(schema)),
+        },
+      };
+      allTools.unshift(schemaTool);
+    }
+
+    if (allTools.length > 0) {
+      params.tools = allTools;
+      if (schema) params.tool_choice = { type: "tool", name: "respond" };
+    }
+
+    const stream = this.client.messages.create(params, { signal });
 
     for await (const chunk of stream as AsyncIterable<AnthropicChunk>) {
       if (
@@ -152,4 +270,20 @@ export class AnthropicProvider extends BaseProvider {
       }
     }
   }
+}
+
+function schemaToFlat(schema: SchemaDef, prefix = ""): Record<string, string> {
+  if (typeof schema === "string") {
+    return { [prefix || "value"]: schema };
+  }
+  if (Array.isArray(schema)) {
+    const inner = typeof schema[0] === "string" ? schema[0] : "string";
+    return { [prefix || "items"]: `array<${inner}>` };
+  }
+  const result: Record<string, string> = {};
+  for (const [key, val] of Object.entries(schema)) {
+    const flat = schemaToFlat(val, key);
+    Object.assign(result, flat);
+  }
+  return result;
 }

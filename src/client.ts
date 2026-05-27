@@ -21,12 +21,14 @@ const providerMap: Record<
 };
 
 export class LlmClient {
-  private provider: ChatProvider;
+  private primaryProvider: ChatProvider;
   private systemPrompt: string;
+  private config: BillyConfig;
 
   constructor(config: BillyConfig = {}) {
+    this.config = config;
     if (config.providerInstance) {
-      this.provider = config.providerInstance as ChatProvider;
+      this.primaryProvider = config.providerInstance as ChatProvider;
     } else {
       const providerType: ProviderType = config.provider || "groq";
       const Provider = providerMap[providerType];
@@ -35,9 +37,24 @@ export class LlmClient {
           `Unknown provider: ${providerType}. Available: ${Object.keys(providerMap).join(", ")}`,
         );
       }
-      this.provider = new Provider(config);
+      this.primaryProvider = new Provider(config);
     }
     this.systemPrompt = config.systemPrompt || "";
+  }
+
+  private getProviderByType(
+    type: ProviderType,
+    overrideConfig?: Partial<BillyConfig>,
+  ): ChatProvider {
+    if (overrideConfig?.providerInstance) {
+      return overrideConfig.providerInstance as ChatProvider;
+    }
+    const Provider = providerMap[type];
+    if (!Provider) {
+      throw new Error(`Unknown provider: ${type}`);
+    }
+    const mergedConfig = { ...this.config, ...overrideConfig, provider: type };
+    return new Provider(mergedConfig);
   }
 
   async chat(
@@ -46,7 +63,34 @@ export class LlmClient {
     options?: BillyOptions,
   ): Promise<BillyResponse> {
     const sp = systemPrompt ?? this.systemPrompt;
-    return this.provider.chat(prompt, sp || undefined, options);
+
+    const providers: { provider: ChatProvider; label: string }[] = [
+      { provider: this.primaryProvider, label: this.config.provider || "groq" },
+    ];
+
+    if (this.config.fallback) {
+      for (const fallbackType of this.config.fallback) {
+        const override = this.config.fallbackConfig?.[fallbackType];
+        providers.push({
+          provider: this.getProviderByType(fallbackType, override),
+          label: fallbackType,
+        });
+      }
+    }
+
+    let lastError: Error | undefined;
+    for (const { provider } of providers) {
+      try {
+        return await provider.chat(prompt, sp || undefined, options);
+      } catch (error: unknown) {
+        lastError = error as Error;
+      }
+    }
+
+    return {
+      content: "",
+      error: lastError?.message || "All providers failed",
+    };
   }
 
   chatStream(
@@ -55,6 +99,41 @@ export class LlmClient {
     options?: BillyOptions,
   ): AsyncIterable<string> {
     const sp = systemPrompt ?? this.systemPrompt;
-    return this.provider.chatStream(prompt, sp || undefined, options);
+
+    const providers: { provider: ChatProvider; label: string }[] = [
+      { provider: this.primaryProvider, label: this.config.provider || "groq" },
+    ];
+
+    if (this.config.fallback) {
+      for (const fallbackType of this.config.fallback) {
+        const override = this.config.fallbackConfig?.[fallbackType];
+        providers.push({
+          provider: this.getProviderByType(fallbackType, override),
+          label: fallbackType,
+        });
+      }
+    }
+
+    return {
+      async *[Symbol.asyncIterator]() {
+        let lastError: Error | undefined;
+        for (const { provider } of providers) {
+          try {
+            const stream = provider.chatStream(
+              prompt,
+              sp || undefined,
+              options,
+            );
+            for await (const chunk of stream) {
+              yield chunk;
+            }
+            return;
+          } catch (error: unknown) {
+            lastError = error as Error;
+          }
+        }
+        throw lastError || new Error("All providers failed");
+      },
+    };
   }
 }
