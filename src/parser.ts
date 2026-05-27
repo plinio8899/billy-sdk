@@ -68,8 +68,7 @@ export function parseAs(type: ReturnType, content: string): unknown {
       if (numMatch) {
         return parseFloat(numMatch[0]);
       }
-      const num = Number(trimmed.replace(/[^0-9.-]/g, ""));
-      return Number.isNaN(num) ? 0 : num;
+      return 0;
     }
 
     case "boolean": {
@@ -92,9 +91,11 @@ export function parseAs(type: ReturnType, content: string): unknown {
         }
       } catch {}
       const lines = trimmed
-        .split(/[\n,]/)
+        .split("\n")
         .map((s) => s.replace(/^[-•*]\s*/, "").trim())
         .filter((s) => s && !s.startsWith("```"));
+      if (lines.length > 1) return lines;
+
       return lines;
     }
 

@@ -269,6 +269,38 @@ describe("Integration — chaining reset", () => {
     const result = await ia.create("test");
     assert.equal(typeof result, "string");
   });
+
+  it("schema se resetea tras create", async () => {
+    let callCount = 0;
+    const steppingMock = new (class extends MockProvider {
+      async chat(): Promise<BillyResponse> {
+        callCount++;
+        return callCount === 1
+          ? { content: '{"name": "test"}' }
+          : { content: "texto plano" };
+      }
+    })("");
+    const ia = new Billy({ providerInstance: steppingMock });
+    await ia.schema({ name: "string" }).create("first");
+    const result = await ia.create("second");
+    assert.equal(result, "texto plano");
+  });
+
+  it("schema se resetea tras stream", async () => {
+    let streamed = false;
+    const steppingMock = new (class extends MockProvider {
+      async *chatStream(): AsyncIterable<string> {
+        streamed = true;
+        yield '{"name": "test"}';
+      }
+    })("texto plano");
+    const ia = new Billy({ providerInstance: steppingMock });
+    for await (const _ of ia.schema({ name: "string" }).stream("test")) {
+    }
+    assert.ok(streamed);
+    const result = await ia.create("second");
+    assert.equal(result, "texto plano");
+  });
 });
 
 describe("Integration — detect automatic types", () => {
@@ -328,6 +360,13 @@ describe("Integration — edge cases", () => {
     await ia.create("contenido original");
     const result = await ia.modify("hazlo más poético");
     assert.equal(result, "texto modificado con contexto");
+  });
+
+  it("options.type sobreescribe el task type", async () => {
+    const mock = new MockProvider("42");
+    const ia = new Billy({ providerInstance: mock });
+    const result = await ia.create("test", { type: "execute" });
+    assert.equal(result, 42);
   });
 });
 
@@ -420,15 +459,15 @@ describe("Billy file attachment", () => {
     assert.deepEqual(ia._files, [{ type: "image", path: "./photo.webp" }]);
   });
 
-  it("withFile con string usa texto para extension desconocida", () => {
+  it("withFile con string usa file para extension desconocida", () => {
     const ia = new Billy({
       providerInstance: new MockProvider(""),
     }) as unknown as {
-      _files: { type: string; content: string }[];
+      _files: { type: string; path: string }[];
       withFile: (f: unknown) => void;
     };
     ia.withFile("./data.csv");
-    assert.deepEqual(ia._files, [{ type: "text", content: "./data.csv" }]);
+    assert.deepEqual(ia._files, [{ type: "file", path: "./data.csv" }]);
   });
 
   it("withFile con FileContent object lo agrega directo", () => {

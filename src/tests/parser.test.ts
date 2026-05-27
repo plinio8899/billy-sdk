@@ -73,4 +73,22 @@ describe("parseAs", () => {
   it("devuelve string sin modificar", () => {
     assert.equal(parseAs("string", "texto plano"), "texto plano");
   });
+
+  it("parseAs number no fusiona números separados", () => {
+    assert.equal(parseAs("number", "items: 3, count: 5"), 3);
+    assert.equal(parseAs("number", "The result is 42 dollars"), 42);
+  });
+
+  it("parseAs number fallback a 0 si no hay números", () => {
+    assert.equal(parseAs("number", "sin números aquí"), 0);
+  });
+
+  it("parseAs array con comas en texto natural no se parte", () => {
+    const result = parseAs(
+      "array",
+      "First, let me explain, the answer is a, b, c",
+    );
+    assert.equal(result.length, 1);
+    assert.equal(result[0], "First, let me explain, the answer is a, b, c");
+  });
 });

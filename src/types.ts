@@ -49,7 +49,8 @@ export type FileContent =
   | { type: "image"; path: string }
   | { type: "image-url"; url: string; detail?: "auto" | "low" | "high" }
   | { type: "pdf"; path: string }
-  | { type: "text"; content: string };
+  | { type: "text"; content: string }
+  | { type: "file"; path: string };
 
 export interface BillyOptions {
   type?: TaskFunction;

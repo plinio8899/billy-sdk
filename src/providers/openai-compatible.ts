@@ -1,4 +1,9 @@
-import { extractPdfText, mimeType, readAsBase64 } from "../file-utils.js";
+import {
+  extractPdfText,
+  mimeType,
+  readAsBase64,
+  readAsText,
+} from "../file-utils.js";
 import type { FileContent } from "../types.js";
 import { BaseProvider, type Message } from "./base.js";
 
@@ -53,6 +58,9 @@ export abstract class OpenAICompatibleProvider extends BaseProvider {
           parts.push({ type: "text", text });
         } else if (file.type === "text") {
           parts.push({ type: "text", text: file.content });
+        } else if (file.type === "file") {
+          const text = await readAsText(file.path);
+          parts.push({ type: "text", text });
         }
       }
       parts.push({ type: "text", text: prompt });

@@ -1,6 +1,6 @@
 import { createRequire } from "node:module";
 import { resolveApiKey } from "../config.js";
-import { mimeType, readAsBase64 } from "../file-utils.js";
+import { mimeType, readAsBase64, readAsText } from "../file-utils.js";
 import type { BillyConfig, FileContent } from "../types.js";
 import { BaseProvider, type Message } from "./base.js";
 
@@ -95,6 +95,9 @@ export class AnthropicProvider extends BaseProvider {
           });
         } else if (file.type === "text") {
           blocks.push({ type: "text", text: file.content });
+        } else if (file.type === "file") {
+          const text = await readAsText(file.path);
+          blocks.push({ type: "text", text });
         }
       }
       blocks.push({ type: "text", text: prompt });

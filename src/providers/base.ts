@@ -11,22 +11,32 @@ export type Message = {
   content: string | Record<string, unknown>[];
 };
 
-function combineSignals(...signals: (AbortSignal | undefined)[]): AbortSignal {
+function combineSignals(...signals: (AbortSignal | undefined)[]): {
+  signal: AbortSignal;
+  cleanup: () => void;
+} {
   const valid = signals.filter(Boolean) as AbortSignal[];
-  if (valid.length === 0) return new AbortController().signal;
-  if (valid.length === 1) return valid[0];
+  if (valid.length === 0)
+    return { signal: new AbortController().signal, cleanup: () => {} };
+  if (valid.length === 1) return { signal: valid[0], cleanup: () => {} };
 
   const controller = new AbortController();
+  const onAbort = () => controller.abort();
   for (const signal of valid) {
     if (signal.aborted) {
       controller.abort(signal.reason);
-      return controller.signal;
+      return { signal: controller.signal, cleanup: () => {} };
     }
-    signal.addEventListener("abort", () => controller.abort(signal.reason), {
-      once: true,
-    });
+    signal.addEventListener("abort", onAbort, { once: true });
   }
-  return controller.signal;
+  return {
+    signal: controller.signal,
+    cleanup: () => {
+      for (const signal of valid) {
+        signal.removeEventListener("abort", onAbort);
+      }
+    },
+  };
 }
 
 export abstract class BaseProvider implements ChatProvider {
@@ -84,7 +94,10 @@ export abstract class BaseProvider implements ChatProvider {
           const controller = new AbortController();
           const timeoutId = setTimeout(() => controller.abort(), this.timeout);
 
-          const signal = combineSignals(controller.signal, options?.signal);
+          const { signal, cleanup } = combineSignals(
+            controller.signal,
+            options?.signal,
+          );
 
           const response = await this.completion(
             messages,
@@ -93,9 +106,11 @@ export abstract class BaseProvider implements ChatProvider {
           );
 
           clearTimeout(timeoutId);
-
+          cleanup();
           return { content: response.content.trim() };
         } catch (error: unknown) {
+          clearTimeout(timeoutId);
+          cleanup();
           lastError = error as Error;
 
           if (attempt < this.retries) {
@@ -121,8 +136,6 @@ export abstract class BaseProvider implements ChatProvider {
   ): AsyncIterable<string> {
     const files = options?.files;
     const messages = await this.buildMessages(prompt, systemPrompt, files);
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), this.timeout);
 
     const prevTemp = this.temperature;
     const prevMax = this.maxTokens;
@@ -130,19 +143,39 @@ export abstract class BaseProvider implements ChatProvider {
       this.temperature = options.temperature;
     if (options?.maxTokens !== undefined) this.maxTokens = options.maxTokens;
 
+    let lastError: Error | undefined;
     try {
-      const signal = combineSignals(controller.signal, options?.signal);
+      for (let attempt = 1; attempt <= this.retries; attempt++) {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), this.timeout);
+        try {
+          const { signal, cleanup } = combineSignals(
+            controller.signal,
+            options?.signal,
+          );
+          const stream = this.streamCompletion(messages, systemPrompt, signal);
 
-      const stream = this.streamCompletion(messages, systemPrompt, signal);
-
-      for await (const chunk of stream) {
-        yield chunk;
+          for await (const chunk of stream) {
+            yield chunk;
+          }
+          cleanup();
+          clearTimeout(timeoutId);
+          return;
+        } catch (error: unknown) {
+          cleanup();
+          clearTimeout(timeoutId);
+          lastError = error as Error;
+          if (attempt < this.retries) {
+            await this.delay(1000 * attempt);
+          }
+        }
       }
     } finally {
-      clearTimeout(timeoutId);
       this.temperature = prevTemp;
       this.maxTokens = prevMax;
     }
+
+    throw lastError || new Error("Stream failed");
   }
 
   private delay(ms: number): Promise<void> {

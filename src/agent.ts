@@ -122,11 +122,13 @@ export class Billy<T = unknown> {
     prompt: string,
     options?: BillyOptions,
   ): Promise<unknown> {
+    if (options?.type) type = options.type;
     const returnType = this._returnType;
     const length = this._length;
     this._returnType = undefined;
     this._length = undefined;
     const schema = this._schema;
+    this._schema = undefined;
     const files = [...this._files, ...(options?.files || [])];
     this._files = [];
     const mergedOptions: BillyOptions | undefined =
@@ -337,7 +339,7 @@ export class Billy<T = unknown> {
       ) {
         this._files.push({ type: "image", path: file });
       } else {
-        this._files.push({ type: "text", content: file });
+        this._files.push({ type: "file", path: file });
       }
     } else {
       this._files.push(file);
@@ -375,6 +377,7 @@ export class Billy<T = unknown> {
     this._returnType = undefined;
     this._length = undefined;
     const schema = this._schema;
+    this._schema = undefined;
     const files = [...this._files, ...(options?.files || [])];
     this._files = [];
     const mergedOptions: BillyOptions | undefined =
@@ -444,7 +447,7 @@ export class Billy<T = unknown> {
 
   withMemory(max: number, ttl?: number): Billy<T> {
     this._memoryMax = max;
-    this._memoryTtl = ttl || 0;
+    if (ttl !== undefined) this._memoryTtl = ttl;
     return this;
   }
 

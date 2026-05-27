@@ -15,8 +15,8 @@ export class GroqProvider extends OpenAICompatibleProvider {
           "\nWays to set it:" +
           "\n  1. Set GROQ_API_KEY environment variable" +
           '\n  2. Pass apiKey in config: billy({ apiKey: "your-key" })' +
-          '\n  3. Create billy-sdk.config.json with { "apiKey": "your-key" }' +
-          "\n  4. Run: npx billy-sdk config set your-key",
+          "\n  3. Run: npx billy-sdk config set your-key" +
+          "\n     (saves to ~/.billy-sdk/config.json)",
       );
     }
     this.client = new Groq({ apiKey }) as unknown as Client;

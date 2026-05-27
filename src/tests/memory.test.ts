@@ -90,4 +90,23 @@ describe("Billy.memory", () => {
     await IA.create("Hola");
     assert.equal(IA.memory.length, 2);
   });
+
+  it("withMemory preserva TTL existente si no se especifica", async () => {
+    const IA = makeIA({
+      memory: 5,
+      memoryTtl: 60000,
+      providerInstance: new MemoryMockProvider(),
+    });
+    IA.withMemory(10);
+    assert.equal(IA._memoryTtl, 60000);
+  });
+
+  it("withMemory sobreescribe TTL si se especifica", async () => {
+    const IA = makeIA({
+      memory: 5,
+      providerInstance: new MemoryMockProvider(),
+    });
+    IA.withMemory(10, 30000);
+    assert.equal(IA._memoryTtl, 30000);
+  });
 });
